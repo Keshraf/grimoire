@@ -151,6 +151,8 @@ interface PaneWrapperProps {
   onSetActive: () => void;
   /** Optional callback when creating a new note from autocomplete */
   onCreateNote?: (title: string) => void;
+  /** Optional callback when renaming a note's title */
+  onTitleChange?: (newTitle: string) => void;
 }
 
 /**
@@ -173,6 +175,7 @@ function PaneWrapper({
   onModeChange,
   onSetActive,
   onCreateNote,
+  onTitleChange,
 }: PaneWrapperProps) {
   const { data: note, isLoading, error } = useNote(slug);
   const updateNoteMutation = useUpdateNote(slug);
@@ -183,6 +186,14 @@ function PaneWrapper({
       onModeChange("view");
     },
     [updateNoteMutation, onModeChange]
+  );
+
+  const handleTitleChange = useCallback(
+    async (newTitle: string) => {
+      await updateNoteMutation.mutateAsync({ title: newTitle });
+      onTitleChange?.(newTitle);
+    },
+    [updateNoteMutation, onTitleChange]
   );
 
   if (isLoading) {
@@ -240,6 +251,7 @@ function PaneWrapper({
         onClose={onClose}
         onModeChange={onModeChange}
         onSave={handleSave}
+        onTitleChange={handleTitleChange}
         onCreateNote={onCreateNote}
       />
     </div>

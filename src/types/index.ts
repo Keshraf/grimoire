@@ -58,6 +58,7 @@ export interface NavigationState {
 
 export type NavigationAction =
   | { type: "PUSH_PANE"; slug: string; afterIndex: number }
+  | { type: "REPLACE_ALL"; slug: string }
   | { type: "CLOSE_PANE"; index: number }
   | { type: "SET_ACTIVE"; index: number }
   | { type: "SET_MODE"; index: number; mode: "view" | "edit" }
@@ -68,6 +69,7 @@ export interface NavigationContextValue {
   state: NavigationState;
   dispatch: React.Dispatch<NavigationAction>;
   pushPane: (slug: string, afterIndex?: number) => void;
+  replaceAll: (slug: string) => void;
   closePane: (index: number) => void;
   setActive: (index: number) => void;
   setMode: (index: number, mode: "view" | "edit") => void;

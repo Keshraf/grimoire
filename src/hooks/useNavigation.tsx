@@ -47,6 +47,15 @@ export function navigationReducer(
       };
     }
 
+    case "REPLACE_ALL": {
+      const { slug } = action;
+      const newPane = createPane(slug);
+      return {
+        panes: [newPane],
+        activePaneIndex: 0,
+      };
+    }
+
     case "CLOSE_PANE": {
       const { index } = action;
       if (index === 0 && state.panes.length === 1) {
@@ -141,6 +150,10 @@ export function NavigationProvider({
     [state.activePaneIndex]
   );
 
+  const replaceAll = useCallback((slug: string) => {
+    dispatch({ type: "REPLACE_ALL", slug });
+  }, []);
+
   const closePane = useCallback((index: number) => {
     dispatch({ type: "CLOSE_PANE", index });
   }, []);
@@ -165,6 +178,7 @@ export function NavigationProvider({
     state,
     dispatch,
     pushPane,
+    replaceAll,
     closePane,
     setActive,
     setMode,

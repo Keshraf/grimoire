@@ -26,7 +26,7 @@ export function MainApp() {
   const [searchOpen, setSearchOpen] = useState(false);
   const initializedRef = useRef(false);
 
-  const { state, pushPane, closePane } = useNavigation();
+  const { state, pushPane, replaceAll, closePane } = useNavigation();
   const {
     data: notes = [],
     isLoading: notesLoading,
@@ -80,12 +80,12 @@ export function MainApp() {
     initializedRef.current = true;
   }, [notes, notesLoading, configLoading, state.panes.length, pushPane]);
 
-  // Handle page click from sidebar
+  // Handle page click from sidebar - replaces entire stack with just this note
   const handlePageClick = useCallback(
     (slug: string) => {
-      pushPane(slug);
+      replaceAll(slug);
     },
-    [pushPane]
+    [replaceAll]
   );
 
   // Handle new note creation
@@ -106,13 +106,13 @@ export function MainApp() {
     }
   }, [createNoteMutation, pushPane]);
 
-  // Handle search result selection
+  // Handle search result selection - replaces entire stack with selected note
   const handleSearchSelect = useCallback(
     (slug: string) => {
-      pushPane(slug);
+      replaceAll(slug);
       setSearchOpen(false);
     },
-    [pushPane]
+    [replaceAll]
   );
 
   // Handle escape key - close modal or rightmost pane

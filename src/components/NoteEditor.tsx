@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { Note } from "@/types";
 import { LinkAutocomplete } from "./LinkAutocomplete";
+import { renderMarkdown } from "@/lib/markdown";
 
 interface NoteEditorProps {
   /** Initial markdown content */
@@ -43,6 +44,23 @@ export function NoteEditor({
     triggerIndex: -1,
     position: { top: 0, left: 0 },
   });
+
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [showPreview, setShowPreview] = useState(true);
+
+  // Render markdown preview with debounce
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const html = await renderMarkdown(content);
+        setPreviewHtml(html);
+      } catch (error) {
+        console.error("Failed to render markdown:", error);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [content]);
 
   // Auto-resize textarea based on content
   useEffect(() => {
@@ -203,22 +221,64 @@ export function NoteEditor({
 
   return (
     <div className="relative flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-black/20">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/50">Editing</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className={`px-2 py-1 text-xs rounded transition-colors ${
+              showPreview
+                ? "bg-white/20 text-white"
+                : "text-white/50 hover:text-white"
+            }`}
+            title={showPreview ? "Hide preview" : "Show preview"}
+          >
+            {showPreview ? "Hide Preview" : "Show Preview"}
+          </button>
+          <span className="text-xs text-white/30">|</span>
+          <span className="text-xs text-white/50">Cmd+S to save, Esc to cancel</span>
+        </div>
+      </div>
+
       {/* Hidden mirror div for cursor position calculation */}
       <div ref={mirrorRef} aria-hidden="true" />
 
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={handleChange}
-        className="flex-1 w-full px-6 py-4 resize-none focus:outline-none bg-transparent"
-        style={{
-          fontFamily: "JetBrains Mono, monospace",
-          color: "#e8e6e3",
-          minHeight: "200px",
-        }}
-        placeholder="Write your note in markdown..."
-        spellCheck
-      />
+      {/* Split view: Editor + Preview */}
+      <div className={`flex-1 flex ${showPreview ? "divide-x divide-white/10" : ""} overflow-hidden`}>
+        {/* Editor pane */}
+        <div className={`${showPreview ? "w-1/2" : "w-full"} flex flex-col overflow-hidden`}>
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleChange}
+            className="flex-1 w-full px-6 py-4 resize-none focus:outline-none bg-transparent overflow-y-auto"
+            style={{
+              fontFamily: "JetBrains Mono, monospace",
+              color: "#e8e6e3",
+              minHeight: "200px",
+            }}
+            placeholder="Write your note in markdown..."
+            spellCheck
+          />
+        </div>
+
+        {/* Preview pane */}
+        {showPreview && (
+          <div className="w-1/2 overflow-y-auto bg-black/10">
+            <div className="px-2 py-1 text-xs text-white/40 border-b border-white/10 sticky top-0 bg-black/30 backdrop-blur">
+              Preview
+            </div>
+            <div
+              className="prose prose-invert max-w-none px-6 py-4"
+              style={{ color: "#e8e6e3" }}
+              dangerouslySetInnerHTML={{ __html: previewHtml }}
+            />
+          </div>
+        )}
+      </div>
 
       {autocomplete.isOpen && (
         <LinkAutocomplete

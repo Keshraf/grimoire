@@ -61,24 +61,6 @@ export function Sidebar({
   const isDocMode = config.mode === "documentation";
   const sidebarWidth = config.layout.sidebar.width;
 
-  // Group notes by tags for personal mode
-  const notesByTag = useMemo(() => {
-    if (isDocMode || !config.features.tags) return null;
-
-    const grouped: Record<string, Note[]> = { Untagged: [] };
-    notes.forEach((note) => {
-      if (note.tags.length === 0) {
-        grouped.Untagged.push(note);
-      } else {
-        note.tags.forEach((tag) => {
-          if (!grouped[tag]) grouped[tag] = [];
-          grouped[tag].push(note);
-        });
-      }
-    });
-    return grouped;
-  }, [notes, isDocMode, config.features.tags]);
-
   // Sorted notes for flat list
   const sortedNotes = useMemo(
     () => [...notes].sort((a, b) => a.title.localeCompare(b.title)),
@@ -169,9 +151,6 @@ export function Sidebar({
           <PersonalNav
             config={config}
             notes={sortedNotes}
-            notesByTag={notesByTag}
-            expandedSections={expandedSections}
-            toggleSection={toggleSection}
             onPageClick={onPageClick}
           />
         )}
@@ -246,87 +225,18 @@ function DocumentationNav({
 
 /**
  * Navigation component for personal mode.
- * Groups notes by tags when enabled, otherwise displays a flat alphabetical list.
+ * Shows all notes in a simple alphabetical list.
  */
 function PersonalNav({
   config,
   notes,
-  notesByTag,
-  expandedSections,
-  toggleSection,
   onPageClick,
 }: {
   config: NexusConfig;
   notes: Note[];
-  notesByTag: Record<string, Note[]> | null;
-  expandedSections: Set<string>;
-  toggleSection: (title: string) => void;
   onPageClick: (slug: string) => void;
 }) {
-  // If tags are enabled and we have grouped notes
-  if (notesByTag && config.features.tags) {
-    const tags = Object.keys(notesByTag).sort((a, b) => {
-      if (a === "Untagged") return 1;
-      if (b === "Untagged") return -1;
-      return a.localeCompare(b);
-    });
-
-    return (
-      <div className="space-y-1">
-        {tags.map((tag) => {
-          const tagNotes = notesByTag[tag];
-          if (tagNotes.length === 0) return null;
-
-          return (
-            <div key={tag}>
-              <button
-                onClick={() => toggleSection(tag)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm font-medium hover:bg-white/10 transition-colors"
-                style={{ color: config.theme.colors?.text }}
-              >
-                <span
-                  className="transition-transform"
-                  style={{
-                    transform: expandedSections.has(tag)
-                      ? "rotate(90deg)"
-                      : "rotate(0deg)",
-                  }}
-                >
-                  <ChevronRightIcon size={14} />
-                </span>
-                <TagIcon size={14} />
-                {tag}
-                <span
-                  className="ml-auto text-xs"
-                  style={{ color: config.theme.colors?.text_muted }}
-                >
-                  {tagNotes.length}
-                </span>
-              </button>
-              {expandedSections.has(tag) && (
-                <div className="ml-4 mt-1 space-y-0.5">
-                  {tagNotes
-                    .sort((a, b) => a.title.localeCompare(b.title))
-                    .map((note) => (
-                      <button
-                        key={note.slug}
-                        onClick={() => onPageClick(note.slug)}
-                        className="w-full text-left px-2 py-1 rounded text-sm hover:bg-white/10 transition-colors truncate"
-                        style={{ color: config.theme.colors?.text_muted }}
-                      >
-                        {note.title}
-                      </button>
-                    ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Flat alphabetical list
+  // Simple flat alphabetical list
   return (
     <div className="space-y-0.5">
       {notes.map((note) => (
@@ -495,25 +405,6 @@ function ChevronRightIcon({ size = 16 }: { size?: number }) {
       strokeLinejoin="round"
     >
       <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
-/** Tag icon for tag-grouped navigation */
-function TagIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
-      <path d="M7 7h.01" />
     </svg>
   );
 }
