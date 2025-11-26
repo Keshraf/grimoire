@@ -1,18 +1,69 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import type { NexusConfig, Note } from "@/types";
 import { Sidebar } from "./Sidebar";
 import { ImportExportModal } from "./ImportExportModal";
 
+/** Theme preset to CSS file path mapping */
+const THEME_PRESETS: Record<string, string> = {
+  dark: "/themes/dark.css",
+  light: "/themes/light.css",
+  arcana: "/themes/arcana.css",
+  codex: "/themes/codex.css",
+};
+
+/**
+ * Props for the Layout component.
+ */
 interface LayoutProps {
+  /** Application configuration including theme, layout, and feature settings */
   config: NexusConfig;
+  /** Array of all notes for sidebar navigation */
   notes: Note[];
+  /** Main content to render in the layout */
   children: ReactNode;
+  /** Callback when a note/page is clicked in the sidebar */
   onPageClick: (slug: string) => void;
+  /** Callback to create a new note */
   onNewNote: () => void;
 }
 
+/**
+ * Main application layout component that orchestrates theming, sidebar, and content areas.
+ *
+ * Handles dynamic theme loading based on preset selection (dark, light, arcana, codex, system),
+ * applies config-based color/font overrides, and manages responsive sidebar behavior.
+ *
+ * @param props - The component props
+ * @param props.config - Application configuration from nexus.config.yaml
+ * @param props.notes - All notes for sidebar navigation
+ * @param props.children - Main content area (typically StackContainer with panes)
+ * @param props.onPageClick - Handler for note selection in sidebar
+ * @param props.onNewNote - Handler for creating new notes
+ *
+ * @remarks
+ * Theme loading follows a layered approach:
+ * 1. Load preset theme CSS file (dark/light/arcana/codex)
+ * 2. Apply config.theme.colors overrides as inline CSS variables
+ * 3. Apply config.theme.fonts overrides as inline CSS variables
+ * 4. Load custom_css file if specified (loaded last for full override capability)
+ *
+ * When preset is "system", the component listens for OS color scheme changes
+ * and automatically switches between dark/light themes.
+ *
+ * @example
+ * ```tsx
+ * <Layout
+ *   config={nexusConfig}
+ *   notes={allNotes}
+ *   onPageClick={(slug) => navigation.openPane(slug)}
+ *   onNewNote={() => createNote()}
+ * >
+ *   <StackContainer panes={openPanes} />
+ * </Layout>
+ * ```
+ */
 export function Layout({
   config,
   notes,
@@ -24,9 +75,37 @@ export function Layout({
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [importExportOpen, setImportExportOpen] = useState(false);
+  const [resolvedTheme, setResolvedTheme] = useState<string>("dark");
 
   const sidebarPosition = config.layout.sidebar.position;
   const sidebarHidden = sidebarPosition === "hidden";
+
+  // Load theme CSS file dynamically
+  const loadThemeCSS = useCallback((themePath: string, linkId: string) => {
+    // Remove existing theme link if present
+    const existingLink = document.getElementById(linkId);
+    if (existingLink) {
+      existingLink.remove();
+    }
+
+    // Create and inject new link element
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = themePath;
+    link.onerror = () => {
+      console.warn(`[Theme] Failed to load theme CSS: ${themePath}`);
+    };
+    document.head.appendChild(link);
+  }, []);
+
+  // Detect system color scheme preference
+  const getSystemPreference = useCallback((): "dark" | "light" => {
+    if (typeof window === "undefined") return "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }, []);
 
   // Handle responsive behavior
   useEffect(() => {
@@ -53,7 +132,57 @@ export function Layout({
       );
   }, []);
 
-  // Apply theme CSS variables
+  // Load preset theme CSS
+  useEffect(() => {
+    const preset = config.theme.preset;
+    let themeToLoad = preset;
+
+    // Handle system preference
+    if (preset === "system") {
+      themeToLoad = getSystemPreference();
+    }
+
+    // Validate preset and fallback to dark if invalid
+    if (!THEME_PRESETS[themeToLoad]) {
+      console.warn(
+        `[Theme] Unknown preset "${preset}", falling back to "dark"`
+      );
+      themeToLoad = "dark";
+    }
+
+    setResolvedTheme(themeToLoad);
+    loadThemeCSS(THEME_PRESETS[themeToLoad], "nexus-theme");
+  }, [config.theme.preset, getSystemPreference, loadThemeCSS]);
+
+  // Listen for system preference changes when preset is "system"
+  useEffect(() => {
+    if (config.theme.preset !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      const newTheme = e.matches ? "dark" : "light";
+      setResolvedTheme(newTheme);
+      loadThemeCSS(THEME_PRESETS[newTheme], "nexus-theme");
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [config.theme.preset, loadThemeCSS]);
+
+  // Load custom CSS if specified
+  useEffect(() => {
+    const customCss = config.theme.custom_css;
+    if (!customCss) {
+      // Remove custom CSS link if it exists
+      const existingLink = document.getElementById("nexus-custom-css");
+      if (existingLink) existingLink.remove();
+      return;
+    }
+
+    loadThemeCSS(customCss, "nexus-custom-css");
+  }, [config.theme.custom_css, loadThemeCSS]);
+
+  // Apply config color and font overrides as inline CSS variables
   useEffect(() => {
     const root = document.documentElement;
     const colors = config.theme.colors;
@@ -81,7 +210,7 @@ export function Layout({
       if (fonts.body) root.style.setProperty("--font-body", fonts.body);
       if (fonts.code) root.style.setProperty("--font-code", fonts.code);
     }
-  }, [config.theme]);
+  }, [config.theme, resolvedTheme]);
 
   const handlePageClick = (slug: string) => {
     onPageClick(slug);
@@ -170,6 +299,7 @@ export function Layout({
   );
 }
 
+/** Hamburger menu icon for mobile sidebar toggle */
 function MenuIcon() {
   return (
     <svg

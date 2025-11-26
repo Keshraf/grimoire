@@ -1,0 +1,21 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CODEX THEME
+   Light professional theme with blue/gray colors
+   Perfect for documentation and technical knowledge bases
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colors - Professional blue/gray palette */
+  --color-primary: #2563eb;
+  --color-secondary: #dbeafe;
+  --color-accent: #3b82f6;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+
+  /* Fonts - Clean sans-serif for readability */
+  --font-heading: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+}

@@ -1,0 +1,20 @@
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME
+   Light color scheme for bright environments
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colors */
+  --color-primary: #6d28d9;
+  --color-secondary: #e5e7eb;
+  --color-accent: #8b5cf6;
+  --color-background: #ffffff;
+  --color-surface: #f3f4f6;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+
+  /* Fonts */
+  --font-heading: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+}

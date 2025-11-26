@@ -1,0 +1,21 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ARCANA THEME
+   Dark mystical theme with purple/black colors
+   Perfect for knowledge bases with a magical, mysterious aesthetic
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colors - Purple/Black mystical palette */
+  --color-primary: #9333ea;
+  --color-secondary: #1e1b4b;
+  --color-accent: #a855f7;
+  --color-background: #0c0a1d;
+  --color-surface: #1e1b4b;
+  --color-text: #e9d5ff;
+  --color-text-muted: #a78bfa;
+
+  /* Fonts - Cinzel for mystical headings */
+  --font-heading: "Cinzel", serif;
+  --font-body: "Inter", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+}

@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   THEME CSS VARIABLES
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Colors - Default dark theme values */
+  --color-primary: #7b2cbf;
+  --color-secondary: #1a1a2e;
+  --color-accent: #c77dff;
+  --color-background: #0a0a0f;
+  --color-surface: #16213e;
+  --color-text: #e8e6e3;
+  --color-text-muted: #a8a6a3;
+
+  /* Fonts */
+  --font-heading: "Cinzel", serif;
+  --font-body: "Inter", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+}
+
 /* Stack Container - Pane animations */
 .pane-enter {
   animation: pane-slide-in 0.3s ease-out;
