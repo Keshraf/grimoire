@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getConfig } from "@/lib/config";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "nexus_auth_session";
@@ -93,17 +93,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        return NextResponse.json(
-          { success: false, error: "Supabase not configured" },
-          { status: 500 }
-        );
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const supabase = await createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -119,7 +109,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         user: { id: data.user.id, email: data.user.email },
-        session: data.session,
       });
     }
 
@@ -179,10 +168,31 @@ export async function GET() {
     });
   }
 
-  // For supabase mode, client handles session
+  if (authMode === "supabase") {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return NextResponse.json({
+        authenticated: false,
+        authMode: "supabase",
+        user: null,
+      });
+    }
+
+    return NextResponse.json({
+      authenticated: true,
+      authMode: "supabase",
+      user: { id: user.id, email: user.email },
+    });
+  }
+
   return NextResponse.json({
     authenticated: false,
-    authMode: "supabase",
+    authMode,
     user: null,
   });
 }
@@ -203,6 +213,11 @@ export async function DELETE() {
     }
 
     cookieStore.delete(SESSION_COOKIE);
+  }
+
+  if (authMode === "supabase") {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
   }
 
   return NextResponse.json({ success: true });

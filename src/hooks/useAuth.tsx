@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { AuthContextValue, AuthUser, LoginCredentials } from "@/types";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -27,6 +27,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [writePermission, setWritePermission] = useState<
     "authenticated" | "public"
   >("authenticated");
+
+  // Create Supabase client once
+  const supabase = createClient();
 
   // Check session on mount
   useEffect(() => {
@@ -56,13 +59,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         if (mode === "supabase") {
-          // Check Supabase session
+          // Check Supabase session using getUser() for security
           const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.user) {
+            data: { user: supabaseUser },
+            error,
+          } = await supabase.auth.getUser();
+
+          if (error) {
+            console.error("Auth check error:", error);
+            setIsAuthenticated(false);
+            setUser(null);
+          } else if (supabaseUser) {
             setIsAuthenticated(true);
-            setUser({ id: session.user.id, email: session.user.email });
+            setUser({ id: supabaseUser.id, email: supabaseUser.email });
           }
           setIsLoading(false);
         }
@@ -73,7 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     checkAuth();
-  }, []);
+  }, [supabase.auth]);
 
   // Listen for Supabase auth changes
   useEffect(() => {
@@ -81,18 +90,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
         setIsAuthenticated(true);
         setUser({ id: session.user.id, email: session.user.email });
-      } else {
+      } else if (event === "SIGNED_OUT") {
         setIsAuthenticated(false);
         setUser(null);
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        // Session was refreshed, update user if needed
+        setUser({ id: session.user.id, email: session.user.email });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [authMode]);
+  }, [authMode, supabase.auth]);
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
@@ -134,7 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
     },
-    [authMode]
+    [authMode, supabase.auth]
   );
 
   const logout = useCallback(async () => {
@@ -150,7 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuthenticated(false);
       setUser(null);
     }
-  }, [authMode]);
+  }, [authMode, supabase.auth]);
 
   // Determine if user can write
   const canWrite = writePermission === "public" || isAuthenticated;

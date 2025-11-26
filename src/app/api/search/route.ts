@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { getConfig } from "@/lib/config";
 import { aiSearch } from "@/lib/ai-search";
 import type { SearchResult, AISearchResult } from "@/types";
@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
   const searchQuery = query.trim();
 
   try {
+    const supabase = await createClient();
+
     // Use Supabase full-text search
     const { data: notes, error } = await supabase
       .from("notes")

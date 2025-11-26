@@ -19,3 +19,6 @@ export {
 export type { CreateNoteInput, UpdateNoteInput } from "./useNotes";
 
 export { useAuth, AuthProvider } from "./useAuth";
+
+export { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+export type { UseKeyboardShortcutsOptions } from "./useKeyboardShortcuts";

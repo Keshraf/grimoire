@@ -42,7 +42,8 @@ export function generateSlug(title: string): string {
  */
 export async function syncLinks(slug: string, content: string): Promise<void> {
   // Dynamic import to avoid loading supabase at module level (for testing)
-  const { supabase } = await import("./supabase");
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
 
   const targets = parseWikilinks(content);
 

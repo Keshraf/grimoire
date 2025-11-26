@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import JSZip from "jszip";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { Note, Link } from "@/types";
 
 function generateFrontmatter(note: Note, backlinks?: string[]): string {
@@ -26,6 +26,7 @@ function generateFrontmatter(note: Note, backlinks?: string[]): string {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
+    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const includeBacklinks = searchParams.get("includeBacklinks") === "true";
 

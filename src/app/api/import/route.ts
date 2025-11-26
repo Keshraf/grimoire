@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import matter from "gray-matter";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { generateSlug, syncLinks } from "@/lib/links";
 
 interface ImportError {
@@ -29,6 +29,8 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    const supabase = await createClient();
 
     for (const file of files) {
       // Skip non-markdown files

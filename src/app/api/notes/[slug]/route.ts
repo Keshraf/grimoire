@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { syncLinks } from "@/lib/links";
 
 interface RouteParams {
@@ -8,6 +8,7 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
+  const supabase = await createClient();
 
   const { data: note, error } = await supabase
     .from("notes")
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
+  const supabase = await createClient();
 
   // Check if note exists
   const { data: existing, error: fetchError } = await supabase
@@ -88,6 +90,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
+  const supabase = await createClient();
 
   // Check if note exists
   const { data: existing, error: fetchError } = await supabase

@@ -1,4 +1,5 @@
 export { Layout } from "./Layout";
+export { MainApp } from "./MainApp";
 export { Sidebar } from "./Sidebar";
 export { StackContainer } from "./StackContainer";
 export { Pane } from "./Pane";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { getConfig } from "@/lib/config";
 import { aiSearch } from "@/lib/ai-search";
 import { parseWikilinks } from "@/lib/links";
@@ -98,6 +98,7 @@ export async function GET(): Promise<NextResponse<MCPManifest>> {
 
 // Tool handlers
 async function handleListPages(): Promise<ListPagesResult> {
+  const supabase = await createClient();
   const { data: notes, error } = await supabase
     .from("notes")
     .select("slug, title")
@@ -112,6 +113,7 @@ async function handleListPages(): Promise<ListPagesResult> {
 
 async function handleGetPage(input: { slug: string }): Promise<GetPageResult> {
   const { slug } = input;
+  const supabase = await createClient();
 
   // Fetch the note
   const { data: note, error } = await supabase
@@ -149,6 +151,7 @@ async function handleSearch(input: {
 }): Promise<SearchToolResult> {
   const { query } = input;
   const searchQuery = query.trim();
+  const supabase = await createClient();
 
   const { data: notes, error } = await supabase
     .from("notes")
@@ -197,6 +200,8 @@ async function handleAsk(input: { question: string }): Promise<AskToolResult> {
     throw { status: 503, message: "AI search is not available" };
   }
 
+  const supabase = await createClient();
+
   // Search for relevant notes
   const { data: notes, error } = await supabase
     .from("notes")
@@ -231,6 +236,7 @@ async function handleGetConnections(input: {
   slug: string;
 }): Promise<GetConnectionsResult> {
   const { slug } = input;
+  const supabase = await createClient();
 
   // Verify note exists
   const { data: note, error } = await supabase

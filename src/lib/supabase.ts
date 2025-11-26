@@ -1,19 +1,23 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Legacy Supabase client exports for backward compatibility.
+ *
+ * For new code, prefer importing from:
+ * - '@/lib/supabase/client' for browser/client components
+ * - '@/lib/supabase/server' for server components and API routes
+ */
+
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
-}
+// Browser client singleton for client-side usage
+// This is kept for backward compatibility with existing code
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Server-side client with service role (for admin operations)
-export function createServerClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-  }
-  return createClient(supabaseUrl, serviceRoleKey);
-}
+// Re-export new utilities for gradual migration
+export { createClient } from "./supabase/client";
+export {
+  createClient as createServerSupabaseClient,
+  createServiceClient,
+} from "./supabase/server";
