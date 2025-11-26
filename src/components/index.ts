@@ -1,5 +1,6 @@
 export { Layout } from "./Layout";
 export { Sidebar } from "./Sidebar";
+export { StackContainer } from "./StackContainer";
 export { Pane } from "./Pane";
 export { PaneHeader } from "./PaneHeader";
 export { NoteViewer } from "./NoteViewer";

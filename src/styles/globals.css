@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Stack Container - Pane animations */
+.pane-enter {
+  animation: pane-slide-in 0.3s ease-out;
+}
+
+@keyframes pane-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile: Full-width panes with snap scrolling */
+@media (max-width: 767px) {
+  .stack-container {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stack-container > * {
+    scroll-snap-align: center;
+    width: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    flex-shrink: 0;
+  }
+}
+
+/* Desktop: Disable snap, allow free scroll */
+@media (min-width: 768px) {
+  .stack-container {
+    scroll-snap-type: none;
+  }
+
+  .stack-container > * {
+    scroll-snap-align: unset;
+  }
+}

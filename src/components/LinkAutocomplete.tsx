@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { Note } from "@/types";
 
+/**
+ * Props for the LinkAutocomplete component.
+ */
 export interface LinkAutocompleteProps {
   /** Current search query (text after [[) */
   query: string;
@@ -18,6 +21,38 @@ export interface LinkAutocompleteProps {
   onCreateNew?: (title: string) => void;
 }
 
+/**
+ * Autocomplete popup for inserting wikilinks to existing notes.
+ *
+ * Displays a filterable list of notes when the user types `[[` in the NoteEditor.
+ * Supports keyboard navigation (arrow keys, Enter, Escape) and mouse interaction.
+ * When no notes match the query, offers an option to create a new note.
+ *
+ * @param props - Component props
+ * @param props.query - Current search query (text typed after `[[`)
+ * @param props.notes - Array of notes to filter and display
+ * @param props.position - Screen coordinates `{ top, left }` for popup placement
+ * @param props.onSelect - Callback when a note is selected, receives `(slug, title)`
+ * @param props.onClose - Callback when the popup should close (Escape or click outside)
+ * @param props.onCreateNew - Optional callback when user selects "Create new note"
+ *
+ * @remarks
+ * The component manages its own keyboard event listeners and click-outside detection.
+ * It automatically adjusts position to stay within the viewport bounds.
+ * Selection state resets when the query changes, and the selected item scrolls into view.
+ *
+ * @example
+ * ```tsx
+ * <LinkAutocomplete
+ *   query="getting"
+ *   notes={allNotes}
+ *   position={{ top: 200, left: 300 }}
+ *   onSelect={(slug, title) => insertLink(slug, title)}
+ *   onClose={() => setAutocompleteOpen(false)}
+ *   onCreateNew={(title) => createNewNote(title)}
+ * />
+ * ```
+ */
 export function LinkAutocomplete({
   query,
   notes,
