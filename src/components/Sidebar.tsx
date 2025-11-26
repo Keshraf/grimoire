@@ -3,15 +3,48 @@
 import { useState, useMemo } from "react";
 import type { NexusConfig, Note } from "@/types";
 
+/**
+ * Props for the Sidebar component.
+ */
 interface SidebarProps {
+  /** Application configuration including theme, layout, and feature flags */
   config: NexusConfig;
+  /** Array of notes to display in the navigation */
   notes: Note[];
+  /** Callback fired when a note is clicked, receives the note's slug */
   onPageClick: (slug: string) => void;
+  /** Callback fired when the "New Note" button is clicked */
   onNewNote: () => void;
+  /** Whether the sidebar is in collapsed state (shows only icons) */
   collapsed?: boolean;
+  /** Callback to toggle the sidebar collapsed state */
   onToggleCollapse?: () => void;
 }
 
+/**
+ * Collapsible sidebar navigation component for the NEXUS knowledge base.
+ *
+ * Renders differently based on the app mode:
+ * - Documentation mode: Shows structured sections defined in config
+ * - Personal mode: Groups notes by tags or displays a flat alphabetical list
+ *
+ * @remarks
+ * The sidebar maintains its own expanded/collapsed section state internally.
+ * In documentation mode, sections are defined via `config.navigation.sections`.
+ * In personal mode, notes are grouped by tags when `config.features.tags` is enabled.
+ *
+ * @example
+ * ```tsx
+ * <Sidebar
+ *   config={nexusConfig}
+ *   notes={allNotes}
+ *   onPageClick={(slug) => navigateTo(slug)}
+ *   onNewNote={() => openNewNoteModal()}
+ *   collapsed={false}
+ *   onToggleCollapse={() => setCollapsed(!collapsed)}
+ * />
+ * ```
+ */
 export function Sidebar({
   config,
   notes,
@@ -171,7 +204,10 @@ export function Sidebar({
   );
 }
 
-// Documentation mode navigation
+/**
+ * Navigation component for documentation mode.
+ * Renders collapsible sections with pages as defined in the config.
+ */
 function DocumentationNav({
   config,
   notes,
@@ -232,7 +268,10 @@ function DocumentationNav({
   );
 }
 
-// Personal mode navigation
+/**
+ * Navigation component for personal mode.
+ * Groups notes by tags when enabled, otherwise displays a flat alphabetical list.
+ */
 function PersonalNav({
   config,
   notes,
@@ -328,7 +367,7 @@ function PersonalNav({
   );
 }
 
-// Icons
+/** Search icon (magnifying glass) */
 function SearchIcon() {
   return (
     <svg
@@ -347,6 +386,7 @@ function SearchIcon() {
   );
 }
 
+/** Plus icon for "New Note" action */
 function PlusIcon() {
   return (
     <svg
@@ -364,6 +404,7 @@ function PlusIcon() {
   );
 }
 
+/** Left chevron icon for collapsing sidebar */
 function ChevronLeftIcon() {
   return (
     <svg
@@ -381,6 +422,7 @@ function ChevronLeftIcon() {
   );
 }
 
+/** Right chevron icon for expanding sections/sidebar */
 function ChevronRightIcon({ size = 16 }: { size?: number }) {
   return (
     <svg
@@ -398,6 +440,7 @@ function ChevronRightIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+/** Tag icon for tag-grouped navigation */
 function TagIcon({ size = 16 }: { size?: number }) {
   return (
     <svg

@@ -1,2 +1,10 @@
 export { Layout } from "./Layout";
 export { Sidebar } from "./Sidebar";
+export { Pane } from "./Pane";
+export { PaneHeader } from "./PaneHeader";
+export { NoteViewer } from "./NoteViewer";
+export { NoteEditor } from "./NoteEditor";
+export { LinkAutocomplete } from "./LinkAutocomplete";
+export { BacklinksPanel } from "./BacklinksPanel";
+export { LinearNav } from "./LinearNav";
+export { LocalGraph } from "./LocalGraph";
