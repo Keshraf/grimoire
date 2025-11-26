@@ -200,3 +200,68 @@ export interface AuthState {
     email?: string;
   };
 }
+
+// MCP (Model Context Protocol) types
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: "object";
+    properties: Record<string, { type: string; description: string }>;
+    required: string[];
+  };
+}
+
+export interface MCPManifest {
+  name: string;
+  version: string;
+  description: string;
+  tools: MCPTool[];
+}
+
+export interface MCPToolRequest {
+  tool: string;
+  input: Record<string, unknown>;
+}
+
+export interface MCPSuccessResponse<T = unknown> {
+  result: T;
+}
+
+export interface MCPErrorResponse {
+  error: string;
+}
+
+export type MCPResponse<T = unknown> = MCPSuccessResponse<T> | MCPErrorResponse;
+
+// MCP tool result types
+export interface ListPagesResult {
+  pages: Array<{ slug: string; title: string }>;
+}
+
+export interface GetPageResult {
+  slug: string;
+  title: string;
+  content: string;
+  outlinks: string[];
+  backlinks: string[];
+}
+
+export interface SearchToolResult {
+  results: Array<{ slug: string; title: string; excerpt: string }>;
+}
+
+export interface AskToolResult {
+  answer: string;
+  sources: Array<{ slug: string; title: string }>;
+}
+
+export interface GetConnectionsResult {
+  slug: string;
+  outlinks: string[];
+  backlinks: string[];
+  localGraph: {
+    nodes: Array<{ id: string; title: string; connections: number }>;
+    edges: Array<{ source: string; target: string }>;
+  };
+}
