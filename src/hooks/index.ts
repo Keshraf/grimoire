@@ -17,3 +17,5 @@ export {
   QueryClientProvider,
 } from "./useNotes";
 export type { CreateNoteInput, UpdateNoteInput } from "./useNotes";
+
+export { useAuth, AuthProvider } from "./useAuth";

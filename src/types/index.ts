@@ -166,6 +166,32 @@ export interface AISearchResult {
 }
 
 // Auth types
+export interface AuthUser {
+  id: string;
+  email?: string;
+}
+
+export interface AuthContextValue {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: AuthUser | null;
+  authMode: "none" | "password" | "supabase";
+  canWrite: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+export interface LoginCredentials {
+  password?: string;
+  email?: string;
+}
+
+export interface AuthSession {
+  token: string;
+  expiresAt: number;
+}
+
+// Legacy AuthState for backwards compatibility
 export interface AuthState {
   isAuthenticated: boolean;
   user?: {
