@@ -40,7 +40,7 @@ export function parseLinks(markdown: string): ParsedLink[] {
  */
 export function extractOutlinks(markdown: string): string[] {
   const links = parseLinks(markdown);
-  const uniqueSlugs = [...new Set(links.map((link) => link.slug))];
+  const uniqueSlugs = Array.from(new Set(links.map((link) => link.slug)));
   return uniqueSlugs;
 }
 

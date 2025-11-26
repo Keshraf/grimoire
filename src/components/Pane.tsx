@@ -64,7 +64,6 @@ export function Pane({
           minWidth,
           maxWidth,
           backgroundColor: config.theme.colors?.background,
-          // @ts-expect-error ringColor is a Tailwind CSS variable
           "--tw-ring-color": isActive
             ? config.theme.colors?.primary
             : undefined,

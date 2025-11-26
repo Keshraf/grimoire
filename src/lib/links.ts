@@ -14,7 +14,7 @@ export function parseWikilinks(content: string): string[] {
   }
 
   // Return unique slugs
-  return [...new Set(matches)];
+  return Array.from(new Set(matches));
 }
 
 /**

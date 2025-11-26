@@ -10,3 +10,4 @@ export { BacklinksPanel } from "./BacklinksPanel";
 export { LinearNav } from "./LinearNav";
 export { LocalGraph } from "./LocalGraph";
 export { SearchModal } from "./SearchModal";
+export { ImportExportModal } from "./ImportExportModal";

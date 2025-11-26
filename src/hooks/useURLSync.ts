@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useNavigation } from "./useNavigation.tsx";
+import { useNavigation } from "./useNavigation";
 
 /**
  * Parse URL to extract slugs from pathname and search params

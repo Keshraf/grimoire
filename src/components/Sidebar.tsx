@@ -177,6 +177,19 @@ export function Sidebar({
           <PlusIcon />
           <span>New Note</span>
         </button>
+        {config.features.import_export && (
+          <button
+            className="w-full flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-white/10 transition-colors"
+            style={{ color: config.theme.colors?.text_muted }}
+            onClick={() => {
+              // Trigger import/export modal
+              document.dispatchEvent(new CustomEvent("open-import-export"));
+            }}
+          >
+            <ImportExportIcon />
+            <span>Import / Export</span>
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -455,6 +468,26 @@ function TagIcon({ size = 16 }: { size?: number }) {
     >
       <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
       <path d="M7 7h.01" />
+    </svg>
+  );
+}
+
+/** Import/Export icon (arrows up and down) */
+function ImportExportIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v12" />
+      <path d="m8 11 4 4 4-4" />
+      <path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4" />
     </svg>
   );
 }

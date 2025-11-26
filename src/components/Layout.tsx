@@ -3,6 +3,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import type { NexusConfig, Note } from "@/types";
 import { Sidebar } from "./Sidebar";
+import { ImportExportModal } from "./ImportExportModal";
 
 interface LayoutProps {
   config: NexusConfig;
@@ -22,6 +23,7 @@ export function Layout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [importExportOpen, setImportExportOpen] = useState(false);
 
   const sidebarPosition = config.layout.sidebar.position;
   const sidebarHidden = sidebarPosition === "hidden";
@@ -38,6 +40,17 @@ export function Layout({
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Listen for import/export modal trigger
+  useEffect(() => {
+    const handleOpenImportExport = () => setImportExportOpen(true);
+    document.addEventListener("open-import-export", handleOpenImportExport);
+    return () =>
+      document.removeEventListener(
+        "open-import-export",
+        handleOpenImportExport
+      );
   }, []);
 
   // Apply theme CSS variables
@@ -145,6 +158,14 @@ export function Layout({
       <main className="flex-1 overflow-x-auto overflow-y-hidden">
         {children}
       </main>
+
+      {/* Import/Export Modal */}
+      {config.features.import_export && (
+        <ImportExportModal
+          isOpen={importExportOpen}
+          onClose={() => setImportExportOpen(false)}
+        />
+      )}
     </div>
   );
 }

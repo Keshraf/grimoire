@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { navigationReducer } from "../useNavigation.tsx";
+import { navigationReducer } from "../useNavigation";
 import type { NavigationState, NavigationAction } from "@/types";
 
 // Helper to create a mock pane
