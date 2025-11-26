@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
+import { NavigationProvider } from "@/hooks/useNavigation";
 
 export const metadata: Metadata = {
   title: "NEXUS",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <NavigationProvider>{children}</NavigationProvider>
+      </body>
     </html>
   );
 }

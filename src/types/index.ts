@@ -18,6 +18,14 @@ export interface NoteWithLinks extends Note {
   html: string;
 }
 
+// Database record for a link between notes
+export interface Link {
+  id: string;
+  source_slug: string;
+  target_slug: string;
+  created_at: string;
+}
+
 // Graph visualization types
 export interface GraphNode {
   id: string;
@@ -49,13 +57,22 @@ export interface NavigationState {
 }
 
 export type NavigationAction =
-  | { type: "OPEN_PANE"; slug: string; mode?: "view" | "edit" }
-  | { type: "CLOSE_PANE"; paneId: string }
-  | { type: "SET_ACTIVE_PANE"; paneIndex: number }
-  | { type: "UPDATE_PANE_MODE"; paneId: string; mode: "view" | "edit" }
-  | { type: "UPDATE_PANE_SCROLL"; paneId: string; scrollTop: number }
-  | { type: "REPLACE_PANE"; paneId: string; slug: string }
-  | { type: "RESET_NAVIGATION" };
+  | { type: "PUSH_PANE"; slug: string; afterIndex: number }
+  | { type: "CLOSE_PANE"; index: number }
+  | { type: "SET_ACTIVE"; index: number }
+  | { type: "SET_MODE"; index: number; mode: "view" | "edit" }
+  | { type: "NAVIGATE_LINEAR"; slug: string; afterIndex: number }
+  | { type: "RESTORE_FROM_URL"; slugs: string[] };
+
+export interface NavigationContextValue {
+  state: NavigationState;
+  dispatch: React.Dispatch<NavigationAction>;
+  pushPane: (slug: string, afterIndex?: number) => void;
+  closePane: (index: number) => void;
+  setActive: (index: number) => void;
+  setMode: (index: number, mode: "view" | "edit") => void;
+  navigateLinear: (slug: string, afterIndex?: number) => void;
+}
 
 // Configuration types
 export interface NexusConfig {
