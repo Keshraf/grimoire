@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Component Docs Generator",
+  "description": "Automatically generates JSDoc comments for new React components, including component purpose, prop documentation with @param tags, and usage examples",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/components/**/*.tsx",
+      "**/components/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new React component file has been created. Please analyze the component and add comprehensive JSDoc documentation:\n\n1. Add a JSDoc comment block above the component describing its purpose and responsibility\n2. Document all props using @param tags with types and descriptions\n3. Include an @example tag showing basic usage of the component\n4. If the component has complex behavior or state, add @remarks to explain it\n5. Keep all comments concise, clear, and informative\n6. Follow JSDoc best practices and TypeScript conventions\n7. Ensure the documentation is helpful for other developers using this component\n\nPlease update the file with the documentation added."
+  }
+}

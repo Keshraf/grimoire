@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Code Quality Check",
+  "description": "Fixes TypeScript errors, missing imports, and checks for secrets",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Code quality check for this TypeScript file:\n\n1. TYPE ERRORS: Run `npx tsc --noEmit` and fix any errors in this file\n2. IMPORTS: Add any missing imports (React hooks, components, types, utilities)\n3. SECRETS: Check for exposed API keys or passwords - warn if found\n4. PATTERNS: Ensure file follows project conventions\n\nFix issues automatically. Only report if major changes were made or secrets were found."
+  }
+}

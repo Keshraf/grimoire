@@ -1,0 +1,144 @@
+# ═══════════════════════════════════════════════════════════════════
+# NEXUS CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────
+# Site Info
+# ─────────────────────────────────────────────────────────────────────
+site:
+  title: "My Knowledge Base"
+  description: "Personal notes and documentation"
+  logo: "/logo.svg" # Path in /public
+  favicon: "/favicon.ico"
+
+# ─────────────────────────────────────────────────────────────────────
+# Mode: "personal" or "documentation"
+# ─────────────────────────────────────────────────────────────────────
+mode: "personal"
+
+# Personal mode:
+#   - All notes shown in sidebar (flat list or by tags)
+#   - No linear navigation (Prev/Next)
+#   - Optimized for exploration
+
+# Documentation mode:
+#   - Structured TOC in sidebar
+#   - Linear navigation enabled
+#   - Optimized for sequential reading
+
+# ─────────────────────────────────────────────────────────────────────
+# Theme
+# ─────────────────────────────────────────────────────────────────────
+theme:
+  preset: "dark" # "dark", "light", "system", or custom file
+
+  # Override specific colors (optional)
+  colors:
+    primary: "#7b2cbf"
+    secondary: "#1a1a2e"
+    accent: "#c77dff"
+    background: "#0a0a0f"
+    surface: "#16213e"
+    text: "#e8e6e3"
+    text_muted: "#a8a6a3"
+
+  # Typography (optional)
+  fonts:
+    heading: "Cinzel, serif"
+    body: "Inter, sans-serif"
+    code: "JetBrains Mono, monospace"
+
+  # Custom CSS file (optional) — for full control
+  custom_css: "./themes/my-theme.css"
+
+# ─────────────────────────────────────────────────────────────────────
+# Layout
+# ─────────────────────────────────────────────────────────────────────
+layout:
+  sidebar:
+    position: "left" # "left", "right", "hidden"
+    width: 260 # pixels
+    collapsible: true
+
+  pane:
+    width: 600 # pixels (desktop)
+    min_width: 400
+    max_width: 800
+
+  graph:
+    position: "bottom" # "bottom", "sidebar", "hidden"
+    height: 200 # pixels
+    default_expanded: true
+
+# ─────────────────────────────────────────────────────────────────────
+# Features — Toggle on/off
+# ─────────────────────────────────────────────────────────────────────
+features:
+  local_graph: true
+  backlinks_panel: true
+  linear_nav: false # Auto-enabled in documentation mode
+  tags: true
+  search: true
+  ai_search: false # Requires AI provider config
+  import_export: true
+  mcp_server: true
+
+# ─────────────────────────────────────────────────────────────────────
+# Navigation — Only for documentation mode
+# ─────────────────────────────────────────────────────────────────────
+navigation:
+  sections:
+    - title: "Getting Started"
+      pages:
+        - intro
+        - installation
+        - quick-start
+
+    - title: "Authentication"
+      pages:
+        - auth-overview
+        - oauth
+        - api-keys
+
+# ─────────────────────────────────────────────────────────────────────
+# Authentication
+# ─────────────────────────────────────────────────────────────────────
+auth:
+  mode: "password" # "none", "password", "supabase"
+
+  # For "password" mode (simple, single-user)
+  # Set NEXUS_PASSWORD in environment variables
+
+  # For "supabase" mode (multi-user)
+  # Uses Supabase Auth — configure in Supabase dashboard
+
+  # Who can do what
+  permissions:
+    read: "public" # "public" or "authenticated"
+    write: "authenticated" # "authenticated" only
+
+# ─────────────────────────────────────────────────────────────────────
+# Search
+# ─────────────────────────────────────────────────────────────────────
+search:
+  # Basic search always enabled
+
+  # AI-powered search (optional)
+  ai:
+    enabled: false
+    provider: "openai" # "openai" or "anthropic"
+    # API key set via OPENAI_API_KEY or ANTHROPIC_API_KEY env var
+
+# ─────────────────────────────────────────────────────────────────────
+# MCP Server
+# ─────────────────────────────────────────────────────────────────────
+mcp:
+  enabled: true
+  # Exposes /api/mcp endpoint
+  # Add to Claude Desktop: { "url": "https://your-site.com/api/mcp" }
+# ─────────────────────────────────────────────────────────────────────
+# Advanced — Custom component overrides (future)
+# ─────────────────────────────────────────────────────────────────────
+# components:
+#   header: "./components/CustomHeader.tsx"
+#   footer: "./components/CustomFooter.tsx"
