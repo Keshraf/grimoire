@@ -9,3 +9,4 @@ export { LinkAutocomplete } from "./LinkAutocomplete";
 export { BacklinksPanel } from "./BacklinksPanel";
 export { LinearNav } from "./LinearNav";
 export { LocalGraph } from "./LocalGraph";
+export { SearchModal } from "./SearchModal";
