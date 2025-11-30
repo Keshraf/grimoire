@@ -1,9 +1,22 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import type { Note } from "@/types";
-import { LinkAutocomplete } from "./LinkAutocomplete";
-import { renderMarkdown } from "@/lib/markdown";
+import { useCallback, useEffect, useRef } from "react";
+import type { Note, NexusConfig } from "@/types";
+import { WysiwygEditor, WysiwygEditorRef } from "./WysiwygEditor";
+
+// Minimal theme config for standalone editor usage
+interface EditorThemeConfig {
+  colors?: {
+    text?: string;
+    background?: string;
+    primary?: string;
+    accent?: string;
+  };
+  fonts?: {
+    body?: string;
+    heading?: string;
+  };
+}
 
 interface NoteEditorProps {
   /** Initial markdown content */
@@ -18,14 +31,24 @@ interface NoteEditorProps {
   notes: Note[];
   /** Optional: callback when user wants to create a new note from autocomplete */
   onCreateNote?: (title: string) => void;
+  /** Config for theming - accepts full NexusConfig or minimal theme config */
+  config?: NexusConfig | { theme: EditorThemeConfig };
 }
 
-interface AutocompleteState {
-  isOpen: boolean;
-  query: string;
-  triggerIndex: number;
-  position: { top: number; left: number };
-}
+const defaultThemeConfig = {
+  theme: {
+    colors: {
+      text: "#e8e6e3",
+      background: "#0a0a0f",
+      primary: "#7b2cbf",
+      accent: "#c77dff",
+    },
+    fonts: {
+      body: "Inter, sans-serif",
+      heading: "Cinzel, serif",
+    },
+  },
+};
 
 export function NoteEditor({
   content,
@@ -34,170 +57,19 @@ export function NoteEditor({
   onCancel,
   notes,
   onCreateNote,
+  config = defaultThemeConfig,
 }: NoteEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const mirrorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<WysiwygEditorRef>(null);
 
-  const [autocomplete, setAutocomplete] = useState<AutocompleteState>({
-    isOpen: false,
-    query: "",
-    triggerIndex: -1,
-    position: { top: 0, left: 0 },
-  });
-
-  const [previewHtml, setPreviewHtml] = useState<string>("");
-  const [showPreview, setShowPreview] = useState(true);
-
-  // Render markdown preview with debounce
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      try {
-        const html = await renderMarkdown(content);
-        setPreviewHtml(html);
-      } catch (error) {
-        console.error("Failed to render markdown:", error);
-      }
-    }, 150);
-
-    return () => clearTimeout(timer);
-  }, [content]);
-
-  // Auto-resize textarea based on content
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [content]);
-
-  // Calculate cursor position for popup placement
-  const calculateCursorPosition = useCallback(() => {
-    const textarea = textareaRef.current;
-    const mirror = mirrorRef.current;
-    if (!textarea || !mirror) return { top: 0, left: 0 };
-
-    const style = window.getComputedStyle(textarea);
-    mirror.style.cssText = `
-      position: absolute;
-      visibility: hidden;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      width: ${textarea.clientWidth}px;
-      font-family: ${style.fontFamily};
-      font-size: ${style.fontSize};
-      line-height: ${style.lineHeight};
-      padding: ${style.padding};
-      border: ${style.border};
-    `;
-
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = content.slice(0, cursorPos);
-    mirror.textContent = textBeforeCursor;
-
-    const marker = document.createElement("span");
-    marker.textContent = "|";
-    mirror.appendChild(marker);
-
-    const textareaRect = textarea.getBoundingClientRect();
-    const markerRect = marker.getBoundingClientRect();
-
-    return {
-      top:
-        textareaRect.top +
-        (markerRect.top - mirror.getBoundingClientRect().top) +
-        20,
-      left:
-        textareaRect.left +
-        (markerRect.left - mirror.getBoundingClientRect().left),
-    };
-  }, [content]);
-
-  // Detect [[ trigger and manage autocomplete state
-  const detectTrigger = useCallback(
-    (value: string, cursorPos: number) => {
-      // Look backwards from cursor for [[
-      const textBeforeCursor = value.slice(0, cursorPos);
-      const triggerMatch = textBeforeCursor.match(/\[\[([^\]|\[]*)$/);
-
-      if (triggerMatch) {
-        const triggerIndex = textBeforeCursor.lastIndexOf("[[");
-        const query = triggerMatch[1];
-        const position = calculateCursorPosition();
-
-        setAutocomplete({
-          isOpen: true,
-          query,
-          triggerIndex,
-          position,
-        });
-      } else {
-        setAutocomplete((prev) => ({ ...prev, isOpen: false }));
-      }
-    },
-    [calculateCursorPosition]
-  );
-
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const newValue = e.target.value;
-      const cursorPos = e.target.selectionStart;
-      onChange(newValue);
-      detectTrigger(newValue, cursorPos);
-    },
-    [onChange, detectTrigger]
-  );
-
-  // Insert wikilink at trigger position
-  const insertLink = useCallback(
-    (slug: string, title: string) => {
-      const { triggerIndex } = autocomplete;
-      const textarea = textareaRef.current;
-      if (triggerIndex === -1 || !textarea) return;
-
-      const cursorPos = textarea.selectionStart;
-      const before = content.slice(0, triggerIndex);
-      const after = content.slice(cursorPos);
-
-      // Use [[slug]] if title matches slug pattern, otherwise [[slug|title]]
-      const slugFromTitle = title.toLowerCase().replace(/\s+/g, "-");
-      const link =
-        slug === slugFromTitle ? `[[${slug}]]` : `[[${slug}|${title}]]`;
-
-      const newContent = before + link + after;
+  // Handle save with debounce tracking
+  const handleContentChange = useCallback(
+    (newContent: string) => {
       onChange(newContent);
-
-      // Position cursor after the closing ]]
-      const newCursorPos = triggerIndex + link.length;
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-      }, 0);
-
-      setAutocomplete((prev) => ({ ...prev, isOpen: false }));
     },
-    [autocomplete, content, onChange]
+    [onChange]
   );
 
-  // Handle create new note from autocomplete
-  const handleCreateNew = useCallback(
-    (title: string) => {
-      const slug = title
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-      insertLink(slug, title);
-      onCreateNote?.(title);
-    },
-    [insertLink, onCreateNote]
-  );
-
-  // Close autocomplete
-  const closeAutocomplete = useCallback(() => {
-    setAutocomplete((prev) => ({ ...prev, isOpen: false }));
-  }, []);
-
-  // Keyboard shortcuts: Cmd+S to save, Escape to cancel (when autocomplete closed)
+  // Keyboard shortcuts: Cmd+S to save, Escape to cancel
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + S to save
@@ -207,8 +79,8 @@ export function NoteEditor({
         return;
       }
 
-      // Escape to cancel (only when autocomplete is closed)
-      if (e.key === "Escape" && !autocomplete.isOpen) {
+      // Escape to cancel (handled at document level for modal)
+      if (e.key === "Escape") {
         e.preventDefault();
         onCancel();
         return;
@@ -217,7 +89,13 @@ export function NoteEditor({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onSave, onCancel, autocomplete.isOpen]);
+  }, [onSave, onCancel]);
+
+  // Placeholder link click handler (in modal editor, might want different behavior)
+  const handleLinkClick = useCallback((slug: string) => {
+    // In modal mode, we might want to just insert the link or ignore
+    console.log("Link clicked in modal editor:", slug);
+  }, []);
 
   return (
     <div className="relative flex flex-col h-full">
@@ -228,68 +106,34 @@ export function NoteEditor({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowPreview(!showPreview)}
-            className={`px-2 py-1 text-xs rounded transition-colors ${
-              showPreview
-                ? "bg-white/20 text-white"
-                : "text-white/50 hover:text-white"
-            }`}
-            title={showPreview ? "Hide preview" : "Show preview"}
+            onClick={onSave}
+            className="px-3 py-1 text-xs rounded bg-purple-600 hover:bg-purple-500 text-white transition-colors"
           >
-            {showPreview ? "Hide Preview" : "Show Preview"}
+            Save
           </button>
-          <span className="text-xs text-white/30">|</span>
-          <span className="text-xs text-white/50">Cmd+S to save, Esc to cancel</span>
+          <button
+            onClick={onCancel}
+            className="px-3 py-1 text-xs rounded bg-white/10 hover:bg-white/20 text-white/70 transition-colors"
+          >
+            Cancel
+          </button>
+          <span className="text-xs text-white/30 ml-2">Cmd+S to save, Esc to cancel</span>
         </div>
       </div>
 
-      {/* Hidden mirror div for cursor position calculation */}
-      <div ref={mirrorRef} aria-hidden="true" />
-
-      {/* Split view: Editor + Preview */}
-      <div className={`flex-1 flex ${showPreview ? "divide-x divide-white/10" : ""} overflow-hidden`}>
-        {/* Editor pane */}
-        <div className={`${showPreview ? "w-1/2" : "w-full"} flex flex-col overflow-hidden`}>
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={handleChange}
-            className="flex-1 w-full px-6 py-4 resize-none focus:outline-none bg-transparent overflow-y-auto"
-            style={{
-              fontFamily: "JetBrains Mono, monospace",
-              color: "#e8e6e3",
-              minHeight: "200px",
-            }}
-            placeholder="Write your note in markdown..."
-            spellCheck
-          />
-        </div>
-
-        {/* Preview pane */}
-        {showPreview && (
-          <div className="w-1/2 overflow-y-auto bg-black/10">
-            <div className="px-2 py-1 text-xs text-white/40 border-b border-white/10 sticky top-0 bg-black/30 backdrop-blur">
-              Preview
-            </div>
-            <div
-              className="prose prose-invert max-w-none px-6 py-4"
-              style={{ color: "#e8e6e3" }}
-              dangerouslySetInnerHTML={{ __html: previewHtml }}
-            />
-          </div>
-        )}
-      </div>
-
-      {autocomplete.isOpen && (
-        <LinkAutocomplete
-          query={autocomplete.query}
+      {/* WYSIWYG Editor */}
+      <div className="flex-1 overflow-y-auto">
+        <WysiwygEditor
+          ref={editorRef}
+          content={content}
+          config={config}
           notes={notes}
-          position={autocomplete.position}
-          onSelect={insertLink}
-          onClose={closeAutocomplete}
-          onCreateNew={onCreateNote ? handleCreateNew : undefined}
+          onSave={handleContentChange}
+          onLinkClick={handleLinkClick}
+          onCreateNote={onCreateNote}
+          autoFocus={true}
         />
-      )}
+      </div>
     </div>
   );
 }
