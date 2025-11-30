@@ -6,7 +6,7 @@ import { PaneHeader } from "./PaneHeader";
 import { InlineNoteEditor } from "./InlineNoteEditor";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { LinearNav } from "./LinearNav";
-import { LocalGraph } from "./LocalGraph";
+import { FloatingGraph } from "./FloatingGraph";
 import { getLocalGraph } from "@/lib/graph";
 
 interface PaneProps {
@@ -45,7 +45,6 @@ export function Pane({
   const showLinearNav =
     config.features.linear_nav && config.mode === "documentation";
   const showLocalGraph = config.features.local_graph;
-  const graphHeight = config.layout.graph?.height ?? 200;
 
   // Compute local graph data for this note
   const localGraph = useMemo(() => {
@@ -57,7 +56,7 @@ export function Pane({
 
   return (
     <article
-      className={`flex flex-col h-full border-r border-white/10 flex-shrink-0 ${
+      className={`relative flex flex-col h-screen border-r border-white/10 flex-shrink-0 ${
         isActive ? "ring-2 ring-inset" : ""
       }`}
       style={
@@ -74,6 +73,7 @@ export function Pane({
       data-pane-index={index}
       aria-current={isActive ? "true" : undefined}
     >
+      {/* Fixed header */}
       <PaneHeader
         title={note.title}
         config={config}
@@ -82,42 +82,51 @@ export function Pane({
         showClose={index > 0}
       />
 
+      {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto">
-        <InlineNoteEditor
-          content={note.content}
-          html={note.html}
-          config={config}
-          notes={allNotes}
-          onSave={onSave}
-          onLinkClick={onLinkClick}
-          onCreateNote={onCreateNote}
-        />
+        <div className="min-h-full">
+          <InlineNoteEditor
+            content={note.content}
+            html={note.html}
+            config={config}
+            notes={allNotes}
+            onSave={onSave}
+            onLinkClick={onLinkClick}
+            onCreateNote={onCreateNote}
+          />
+
+          {/* Backlinks at bottom of content */}
+          {showBacklinks && note.backlinks.length > 0 && (
+            <div className="mt-8 px-6 pb-6">
+              <BacklinksPanel
+                backlinks={note.backlinks}
+                config={config}
+                onLinkClick={onLinkClick}
+              />
+            </div>
+          )}
+
+          {/* Linear navigation for documentation mode */}
+          {showLinearNav && (
+            <div className="px-6 pb-6">
+              <LinearNav
+                currentSlug={note.slug}
+                config={config}
+                onNavigate={onLinkClick}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {showBacklinks && (
-        <BacklinksPanel
-          backlinks={note.backlinks}
-          config={config}
-          onLinkClick={onLinkClick}
-        />
-      )}
-
-      {showLocalGraph && localGraph.nodes.length > 0 && (
-        <LocalGraph
+      {/* Floating graph in bottom-right corner */}
+      {showLocalGraph && localGraph.nodes.length > 0 && isActive && (
+        <FloatingGraph
           graph={localGraph}
           currentSlug={note.slug}
           onNodeClick={onLinkClick}
           expanded={graphExpanded}
           onToggle={() => setGraphExpanded(!graphExpanded)}
-          height={graphHeight}
-        />
-      )}
-
-      {showLinearNav && (
-        <LinearNav
-          currentSlug={note.slug}
-          config={config}
-          onNavigate={onLinkClick}
         />
       )}
     </article>

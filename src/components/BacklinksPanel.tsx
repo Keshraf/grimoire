@@ -20,12 +20,12 @@ export function BacklinksPanel({
 
   return (
     <div
-      className="border-t border-white/10"
+      className="rounded-lg border border-white/10"
       style={{ backgroundColor: config.theme.colors?.surface }}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors rounded-t-lg"
       >
         <span
           className="text-sm font-medium"
