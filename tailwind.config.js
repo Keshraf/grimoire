@@ -2,7 +2,78 @@
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
-    extend: {},
+    extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: "none",
+            color: "var(--color-text)",
+            a: {
+              color: "var(--color-accent)",
+              textDecoration: "underline",
+              "&:hover": {
+                color: "var(--color-primary)",
+              },
+            },
+            "h1, h2, h3, h4, h5, h6": {
+              color: "var(--color-text)",
+              fontWeight: "600",
+            },
+            strong: {
+              color: "var(--color-text)",
+            },
+            code: {
+              color: "var(--color-accent)",
+              backgroundColor: "var(--color-surface)",
+              padding: "0.125rem 0.25rem",
+              borderRadius: "0.25rem",
+            },
+            "code::before": {
+              content: '""',
+            },
+            "code::after": {
+              content: '""',
+            },
+            pre: {
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-text)",
+            },
+            blockquote: {
+              borderLeftColor: "var(--color-accent)",
+              color: "var(--color-text-muted)",
+            },
+            hr: {
+              borderColor: "var(--color-surface)",
+            },
+            "ul > li::marker": {
+              color: "var(--color-text-muted)",
+            },
+            "ol > li::marker": {
+              color: "var(--color-text-muted)",
+            },
+          },
+        },
+        invert: {
+          css: {
+            "--tw-prose-body": "var(--color-text)",
+            "--tw-prose-headings": "var(--color-text)",
+            "--tw-prose-links": "var(--color-accent)",
+            "--tw-prose-bold": "var(--color-text)",
+            "--tw-prose-counters": "var(--color-text-muted)",
+            "--tw-prose-bullets": "var(--color-text-muted)",
+            "--tw-prose-hr": "var(--color-surface)",
+            "--tw-prose-quotes": "var(--color-text-muted)",
+            "--tw-prose-quote-borders": "var(--color-accent)",
+            "--tw-prose-captions": "var(--color-text-muted)",
+            "--tw-prose-code": "var(--color-accent)",
+            "--tw-prose-pre-code": "var(--color-text)",
+            "--tw-prose-pre-bg": "var(--color-surface)",
+            "--tw-prose-th-borders": "var(--color-surface)",
+            "--tw-prose-td-borders": "var(--color-surface)",
+          },
+        },
+      },
+    },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/typography")],
 };

@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2",
+    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5",
     "gray-matter": "^4.0.3",
     "jszip": "^3.10.1",

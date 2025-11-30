@@ -2,12 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
-import {
-  useNotes,
-  useNote,
-  useUpdateNote,
-  useCreateNote,
-} from "@/hooks/useNotes";
+import { useNotes, useNote, useUpdateNote, useCreateNote } from "@/hooks/useNotes";
 import type { NexusConfig } from "@/types";
 import { Pane } from "./Pane";
 
@@ -40,7 +35,7 @@ interface StackContainerProps {
  * ```
  */
 export function StackContainer({ config }: StackContainerProps) {
-  const { state, pushPane, closePane, setMode, setActive } = useNavigation();
+  const { state, pushPane, closePane, setActive } = useNavigation();
   const { data: allNotes = [] } = useNotes();
   const containerRef = useRef<HTMLDivElement>(null);
   const createNoteMutation = useCreateNote();
@@ -69,13 +64,6 @@ export function StackContainer({ config }: StackContainerProps) {
       closePane(index);
     },
     [closePane]
-  );
-
-  const handleModeChange = useCallback(
-    (index: number, mode: "view" | "edit") => {
-      setMode(index, mode);
-    },
-    [setMode]
   );
 
   const handleCreateNote = useCallback(
@@ -111,12 +99,10 @@ export function StackContainer({ config }: StackContainerProps) {
           slug={pane.slug}
           index={index}
           isActive={index === state.activePaneIndex}
-          mode={pane.mode}
           config={config}
           allNotes={allNotes}
           onLinkClick={(slug) => handleLinkClick(slug, index)}
           onClose={() => handleClose(index)}
-          onModeChange={(mode) => handleModeChange(index, mode)}
           onSetActive={() => setActive(index)}
           onCreateNote={handleCreateNote}
         />
@@ -135,8 +121,6 @@ interface PaneWrapperProps {
   index: number;
   /** Whether this pane is currently active/focused */
   isActive: boolean;
-  /** Current display mode: "view" for reading, "edit" for editing */
-  mode: "view" | "edit";
   /** Application configuration for theming and layout */
   config: NexusConfig;
   /** List of all notes for autocomplete in edit mode */
@@ -145,8 +129,6 @@ interface PaneWrapperProps {
   onLinkClick: (slug: string) => void;
   /** Callback to close this pane */
   onClose: () => void;
-  /** Callback to change the pane's view/edit mode */
-  onModeChange: (mode: "view" | "edit") => void;
   /** Callback to set this pane as active */
   onSetActive: () => void;
   /** Optional callback when creating a new note from autocomplete */
@@ -167,12 +149,10 @@ function PaneWrapper({
   slug,
   index,
   isActive,
-  mode,
   config,
   allNotes = [],
   onLinkClick,
   onClose,
-  onModeChange,
   onSetActive,
   onCreateNote,
   onTitleChange,
@@ -183,9 +163,8 @@ function PaneWrapper({
   const handleSave = useCallback(
     async (content: string) => {
       await updateNoteMutation.mutateAsync({ content });
-      onModeChange("view");
     },
-    [updateNoteMutation, onModeChange]
+    [updateNoteMutation]
   );
 
   const handleTitleChange = useCallback(
@@ -244,12 +223,10 @@ function PaneWrapper({
         note={note}
         index={index}
         isActive={isActive}
-        mode={mode}
         config={config}
         allNotes={allNotes}
         onLinkClick={onLinkClick}
         onClose={onClose}
-        onModeChange={onModeChange}
         onSave={handleSave}
         onTitleChange={handleTitleChange}
         onCreateNote={onCreateNote}

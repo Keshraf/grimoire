@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import type { Note, NoteWithLinks, NexusConfig } from "@/types";
 import { PaneHeader } from "./PaneHeader";
-import { NoteViewer } from "./NoteViewer";
-import { NoteEditor } from "./NoteEditor";
+import { InlineNoteEditor } from "./InlineNoteEditor";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { LinearNav } from "./LinearNav";
 import { LocalGraph } from "./LocalGraph";
@@ -14,12 +13,10 @@ interface PaneProps {
   note: NoteWithLinks;
   index: number;
   isActive: boolean;
-  mode: "view" | "edit";
   config: NexusConfig;
   allNotes: Note[];
   onLinkClick: (slug: string) => void;
   onClose: () => void;
-  onModeChange: (mode: "view" | "edit") => void;
   onSave: (content: string) => void;
   onTitleChange?: (newTitle: string) => void;
   onCreateNote?: (title: string) => void;
@@ -29,17 +26,14 @@ export function Pane({
   note,
   index,
   isActive,
-  mode,
   config,
   allNotes,
   onLinkClick,
   onClose,
-  onModeChange,
   onSave,
   onTitleChange,
   onCreateNote,
 }: PaneProps) {
-  const [editContent, setEditContent] = useState(note.content);
   const [graphExpanded, setGraphExpanded] = useState(
     config.layout.graph?.default_expanded ?? true
   );
@@ -60,15 +54,6 @@ export function Pane({
     }
     return getLocalGraph(note.slug, allNotes);
   }, [showLocalGraph, note.slug, allNotes]);
-
-  const handleSave = useCallback(() => {
-    onSave(editContent);
-  }, [editContent, onSave]);
-
-  const handleCancel = useCallback(() => {
-    setEditContent(note.content);
-    onModeChange("view");
-  }, [note.content, onModeChange]);
 
   return (
     <article
@@ -91,34 +76,25 @@ export function Pane({
     >
       <PaneHeader
         title={note.title}
-        mode={mode}
         config={config}
-        onModeChange={onModeChange}
         onClose={onClose}
         onTitleChange={onTitleChange}
         showClose={index > 0}
       />
 
       <div className="flex-1 overflow-y-auto">
-        {mode === "view" ? (
-          <NoteViewer
-            html={note.html}
-            config={config}
-            onLinkClick={onLinkClick}
-          />
-        ) : (
-          <NoteEditor
-            content={editContent}
-            onChange={setEditContent}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            notes={allNotes}
-            onCreateNote={onCreateNote}
-          />
-        )}
+        <InlineNoteEditor
+          content={note.content}
+          html={note.html}
+          config={config}
+          notes={allNotes}
+          onSave={onSave}
+          onLinkClick={onLinkClick}
+          onCreateNote={onCreateNote}
+        />
       </div>
 
-      {showBacklinks && mode === "view" && (
+      {showBacklinks && (
         <BacklinksPanel
           backlinks={note.backlinks}
           config={config}
@@ -126,7 +102,7 @@ export function Pane({
         />
       )}
 
-      {showLocalGraph && mode === "view" && localGraph.nodes.length > 0 && (
+      {showLocalGraph && localGraph.nodes.length > 0 && (
         <LocalGraph
           graph={localGraph}
           currentSlug={note.slug}
@@ -137,7 +113,7 @@ export function Pane({
         />
       )}
 
-      {showLinearNav && mode === "view" && (
+      {showLinearNav && (
         <LinearNav
           currentSlug={note.slug}
           config={config}

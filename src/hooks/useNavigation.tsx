@@ -38,6 +38,18 @@ export function navigationReducer(
   switch (action.type) {
     case "PUSH_PANE": {
       const { slug, afterIndex } = action;
+
+      // Check if this note is already in the stack - if so, don't add duplicate
+      const existingIndex = state.panes.findIndex((pane) => pane.slug === slug);
+      if (existingIndex !== -1) {
+        // Note already exists, just make it active and scroll to it
+        return {
+          ...state,
+          activePaneIndex: existingIndex,
+        };
+      }
+
+      // Only stack to the right of the current pane (truncate any panes after)
       const newPanes = state.panes.slice(0, afterIndex + 1);
       const newPane = createPane(slug);
       newPanes.push(newPane);
