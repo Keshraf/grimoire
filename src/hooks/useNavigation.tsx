@@ -15,10 +15,10 @@ import type {
 } from "@/types";
 
 // Helper to create a new pane
-function createPane(slug: string): Pane {
+function createPane(title: string): Pane {
   return {
     id: crypto.randomUUID(),
-    slug,
+    title,
     mode: "view",
     scrollTop: 0,
   };
@@ -37,10 +37,10 @@ export function navigationReducer(
 ): NavigationState {
   switch (action.type) {
     case "PUSH_PANE": {
-      const { slug, afterIndex } = action;
+      const { title, afterIndex } = action;
 
       // Check if this note is already in the stack - if so, don't add duplicate
-      const existingIndex = state.panes.findIndex((pane) => pane.slug === slug);
+      const existingIndex = state.panes.findIndex((pane) => pane.title === title);
       if (existingIndex !== -1) {
         // Note already exists, just make it active and scroll to it
         return {
@@ -51,7 +51,7 @@ export function navigationReducer(
 
       // Only stack to the right of the current pane (truncate any panes after)
       const newPanes = state.panes.slice(0, afterIndex + 1);
-      const newPane = createPane(slug);
+      const newPane = createPane(title);
       newPanes.push(newPane);
       return {
         panes: newPanes,
@@ -60,8 +60,8 @@ export function navigationReducer(
     }
 
     case "REPLACE_ALL": {
-      const { slug } = action;
-      const newPane = createPane(slug);
+      const { title } = action;
+      const newPane = createPane(title);
       return {
         panes: [newPane],
         activePaneIndex: 0,
@@ -108,9 +108,9 @@ export function navigationReducer(
     }
 
     case "NAVIGATE_LINEAR": {
-      const { slug, afterIndex } = action;
+      const { title, afterIndex } = action;
       const newPanes = state.panes.slice(0, afterIndex + 1);
-      const newPane = createPane(slug);
+      const newPane = createPane(title);
       newPanes.push(newPane);
       return {
         panes: newPanes,
@@ -119,11 +119,11 @@ export function navigationReducer(
     }
 
     case "RESTORE_FROM_URL": {
-      const { slugs } = action;
-      if (slugs.length === 0) {
+      const { titles } = action;
+      if (titles.length === 0) {
         return { panes: [], activePaneIndex: 0 };
       }
-      const newPanes = slugs.map((slug) => createPane(slug));
+      const newPanes = titles.map((title) => createPane(title));
       return {
         panes: newPanes,
         activePaneIndex: newPanes.length - 1,
@@ -140,30 +140,30 @@ const NavigationContext = createContext<NavigationContextValue | null>(null);
 
 interface NavigationProviderProps {
   children: ReactNode;
-  initialSlug?: string;
+  initialTitle?: string;
 }
 
 export function NavigationProvider({
   children,
-  initialSlug,
+  initialTitle,
 }: NavigationProviderProps) {
   const [state, dispatch] = useReducer(
     navigationReducer,
-    initialSlug
-      ? { panes: [createPane(initialSlug)], activePaneIndex: 0 }
+    initialTitle
+      ? { panes: [createPane(initialTitle)], activePaneIndex: 0 }
       : initialState
   );
 
   const pushPane = useCallback(
-    (slug: string, afterIndex?: number) => {
+    (title: string, afterIndex?: number) => {
       const idx = afterIndex ?? state.activePaneIndex;
-      dispatch({ type: "PUSH_PANE", slug, afterIndex: idx });
+      dispatch({ type: "PUSH_PANE", title, afterIndex: idx });
     },
     [state.activePaneIndex]
   );
 
-  const replaceAll = useCallback((slug: string) => {
-    dispatch({ type: "REPLACE_ALL", slug });
+  const replaceAll = useCallback((title: string) => {
+    dispatch({ type: "REPLACE_ALL", title });
   }, []);
 
   const closePane = useCallback((index: number) => {
@@ -179,9 +179,9 @@ export function NavigationProvider({
   }, []);
 
   const navigateLinear = useCallback(
-    (slug: string, afterIndex?: number) => {
+    (title: string, afterIndex?: number) => {
       const idx = afterIndex ?? state.activePaneIndex;
-      dispatch({ type: "NAVIGATE_LINEAR", slug, afterIndex: idx });
+      dispatch({ type: "NAVIGATE_LINEAR", title, afterIndex: idx });
     },
     [state.activePaneIndex]
   );

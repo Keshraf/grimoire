@@ -53,8 +53,8 @@ export function StackContainer({ config }: StackContainerProps) {
   }, [state.panes.length]);
 
   const handleLinkClick = useCallback(
-    (slug: string, paneIndex: number) => {
-      pushPane(slug, paneIndex);
+    (title: string, paneIndex: number) => {
+      pushPane(title, paneIndex);
     },
     [pushPane]
   );
@@ -68,18 +68,17 @@ export function StackContainer({ config }: StackContainerProps) {
 
   const handleCreateNote = useCallback(
     async (title: string) => {
-      const slug = title.toLowerCase().replace(/\s+/g, "-");
-      await createNoteMutation.mutateAsync({ title, slug, content: "" });
+      await createNoteMutation.mutateAsync({ title, content: "" });
     },
     [createNoteMutation]
   );
 
   const handleDeleteNote = useCallback(
-    (deletedSlug: string) => {
-      // Close all panes that have this slug (there could be multiple)
+    (deletedTitle: string) => {
+      // Close all panes that have this title (there could be multiple)
       // We iterate in reverse to avoid index shifting issues
       const indicesToClose = state.panes
-        .map((pane, index) => (pane.slug === deletedSlug ? index : -1))
+        .map((pane, index) => (pane.title === deletedTitle ? index : -1))
         .filter((i) => i !== -1)
         .reverse();
 
@@ -112,12 +111,12 @@ export function StackContainer({ config }: StackContainerProps) {
       {state.panes.map((pane, index) => (
         <PaneWrapper
           key={pane.id}
-          slug={pane.slug}
+          title={pane.title}
           index={index}
           isActive={index === state.activePaneIndex}
           config={config}
           allNotes={allNotes}
-          onLinkClick={(slug) => handleLinkClick(slug, index)}
+          onLinkClick={(title) => handleLinkClick(title, index)}
           onClose={() => handleClose(index)}
           onSetActive={() => setActive(index)}
           onCreateNote={handleCreateNote}
@@ -132,8 +131,8 @@ export function StackContainer({ config }: StackContainerProps) {
  * Props for the PaneWrapper component.
  */
 interface PaneWrapperProps {
-  /** Slug identifier for the note to display */
-  slug: string;
+  /** Title identifier for the note to display */
+  title: string;
   /** Position index of this pane in the stack */
   index: number;
   /** Whether this pane is currently active/focused */
@@ -142,8 +141,8 @@ interface PaneWrapperProps {
   config: NexusConfig;
   /** List of all notes for autocomplete in edit mode */
   allNotes: ReturnType<typeof useNotes>["data"];
-  /** Callback when a wikilink is clicked, receives the target slug */
-  onLinkClick: (slug: string) => void;
+  /** Callback when a wikilink is clicked, receives the target title */
+  onLinkClick: (title: string) => void;
   /** Callback to close this pane */
   onClose: () => void;
   /** Callback to set this pane as active */
@@ -153,7 +152,7 @@ interface PaneWrapperProps {
   /** Optional callback when renaming a note's title */
   onTitleChange?: (newTitle: string) => void;
   /** Optional callback when deleting this note */
-  onDeleteNote?: (slug: string) => void;
+  onDeleteNote?: (title: string) => void;
 }
 
 /**
@@ -165,7 +164,7 @@ interface PaneWrapperProps {
  * @param props - Component props
  */
 function PaneWrapper({
-  slug,
+  title,
   index,
   isActive,
   config,
@@ -177,8 +176,8 @@ function PaneWrapper({
   onTitleChange,
   onDeleteNote,
 }: PaneWrapperProps) {
-  const { data: note, isLoading, error } = useNote(slug);
-  const updateNoteMutation = useUpdateNote(slug);
+  const { data: note, isLoading, error } = useNote(title);
+  const updateNoteMutation = useUpdateNote(title);
   const deleteNoteMutation = useDeleteNote();
 
   const handleSave = useCallback(
@@ -204,10 +203,10 @@ function PaneWrapper({
     );
 
     if (confirmed) {
-      await deleteNoteMutation.mutateAsync(slug);
-      onDeleteNote?.(slug);
+      await deleteNoteMutation.mutateAsync(title);
+      onDeleteNote?.(title);
     }
-  }, [note, slug, deleteNoteMutation, onDeleteNote]);
+  }, [note, title, deleteNoteMutation, onDeleteNote]);
 
   if (isLoading) {
     return (
@@ -242,7 +241,7 @@ function PaneWrapper({
         onClick={onSetActive}
       >
         <p style={{ color: config.theme.colors?.text_muted }}>
-          Note not found: {slug}
+          Note not found: {title}
         </p>
       </div>
     );

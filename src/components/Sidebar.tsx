@@ -12,8 +12,8 @@ interface SidebarProps {
   config: NexusConfig;
   /** Array of notes to display in the navigation */
   notes: Note[];
-  /** Callback fired when a note is clicked, receives the note's slug */
-  onPageClick: (slug: string) => void;
+  /** Callback fired when a note is clicked, receives the note's title */
+  onPageClick: (title: string) => void;
   /** Callback fired when the "New Note" button is clicked */
   onNewNote: () => void;
   /** Whether the sidebar is in collapsed state (shows only icons) */
@@ -39,7 +39,7 @@ interface SidebarProps {
  * <Sidebar
  *   config={nexusConfig}
  *   notes={allNotes}
- *   onPageClick={(slug) => navigateTo(slug)}
+ *   onPageClick={(title) => navigateTo(title)}
  *   onNewNote={() => openNewNoteModal()}
  *   collapsed={false}
  *   onToggleCollapse={() => setCollapsed(!collapsed)}
@@ -174,10 +174,10 @@ function DocumentationNav({
   notes: Note[];
   expandedSections: Set<string>;
   toggleSection: (title: string) => void;
-  onPageClick: (slug: string) => void;
+  onPageClick: (title: string) => void;
 }) {
   const sections = config.navigation?.sections || [];
-  const noteMap = new Map(notes.map((n) => [n.slug, n]));
+  const noteMap = new Map(notes.map((n) => [n.title, n]));
 
   return (
     <div className="space-y-1">
@@ -202,16 +202,16 @@ function DocumentationNav({
           </button>
           {expandedSections.has(section.title) && (
             <div className="ml-4 mt-1 space-y-0.5">
-              {section.pages.map((slug) => {
-                const note = noteMap.get(slug);
+              {section.pages.map((pageTitle) => {
+                const note = noteMap.get(pageTitle);
                 return (
                   <button
-                    key={slug}
-                    onClick={() => onPageClick(slug)}
+                    key={pageTitle}
+                    onClick={() => onPageClick(pageTitle)}
                     className="w-full text-left px-2 py-1 rounded text-sm hover:bg-white/10 transition-colors truncate"
                     style={{ color: config.theme.colors?.text_muted }}
                   >
-                    {note?.title || slug}
+                    {note?.title || pageTitle}
                   </button>
                 );
               })}
@@ -234,15 +234,15 @@ function PersonalNav({
 }: {
   config: NexusConfig;
   notes: Note[];
-  onPageClick: (slug: string) => void;
+  onPageClick: (title: string) => void;
 }) {
   // Simple flat alphabetical list
   return (
     <div className="space-y-0.5">
       {notes.map((note) => (
         <button
-          key={note.slug}
-          onClick={() => onPageClick(note.slug)}
+          key={note.title}
+          onClick={() => onPageClick(note.title)}
           className="w-full text-left px-2 py-1.5 rounded text-sm hover:bg-white/10 transition-colors truncate"
           style={{ color: config.theme.colors?.text_muted }}
         >

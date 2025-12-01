@@ -58,7 +58,6 @@ export async function aiSearch(
 
     // Build sources from the notes used
     const sources: SearchResult[] = topNotes.map((note, index) => ({
-      slug: note.slug,
       title: note.title,
       excerpt: note.content.slice(0, 100) + "...",
       score: 1 - index * 0.1,

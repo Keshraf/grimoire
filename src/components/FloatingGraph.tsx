@@ -5,8 +5,8 @@ import type { GraphData, GraphNode } from "@/types";
 
 interface FloatingGraphProps {
   graph: GraphData;
-  currentSlug: string;
-  onNodeClick: (slug: string) => void;
+  currentTitle: string;
+  onNodeClick: (title: string) => void;
   expanded: boolean;
   onToggle: () => void;
 }
@@ -41,7 +41,7 @@ const COLLAPSED_SIZE = 40;
 
 export function FloatingGraph({
   graph,
-  currentSlug,
+  currentTitle,
   onNodeClick,
   expanded,
   onToggle,
@@ -76,7 +76,7 @@ export function FloatingGraph({
           y: centerY + radius * Math.sin(angle),
           vx: 0,
           vy: 0,
-          isCurrent: node.id === currentSlug,
+          isCurrent: node.id === currentTitle,
         };
       });
 
@@ -141,7 +141,7 @@ export function FloatingGraph({
 
       return nodePositions;
     },
-    [currentSlug]
+    [currentTitle]
   );
 
   useEffect(() => {
@@ -158,7 +158,7 @@ export function FloatingGraph({
 
   useEffect(() => {
     setTransform({ x: 0, y: 0, scale: 1 });
-  }, [currentSlug]);
+  }, [currentTitle]);
 
   const edgeLines = useMemo(() => {
     return graph.edges

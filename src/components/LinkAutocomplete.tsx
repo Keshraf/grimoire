@@ -14,7 +14,7 @@ export interface LinkAutocompleteProps {
   /** Position for the popup */
   position: { top: number; left: number };
   /** Called when a note is selected */
-  onSelect: (slug: string, title: string) => void;
+  onSelect: (title: string) => void;
   /** Called when popup should close */
   onClose: () => void;
   /** Called when user wants to create a new note */
@@ -32,7 +32,7 @@ export interface LinkAutocompleteProps {
  * @param props.query - Current search query (text typed after `[[`)
  * @param props.notes - Array of notes to filter and display
  * @param props.position - Screen coordinates `{ top, left }` for popup placement
- * @param props.onSelect - Callback when a note is selected, receives `(slug, title)`
+ * @param props.onSelect - Callback when a note is selected, receives the note title
  * @param props.onClose - Callback when the popup should close (Escape or click outside)
  * @param props.onCreateNew - Optional callback when user selects "Create new note"
  *
@@ -47,7 +47,7 @@ export interface LinkAutocompleteProps {
  *   query="getting"
  *   notes={allNotes}
  *   position={{ top: 200, left: 300 }}
- *   onSelect={(slug, title) => insertLink(slug, title)}
+ *   onSelect={(title) => insertLink(title)}
  *   onClose={() => setAutocompleteOpen(false)}
  *   onCreateNew={(title) => createNewNote(title)}
  * />
@@ -65,15 +65,11 @@ export function LinkAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Filter notes by case-insensitive match on title and slug, limit to 10
+  // Filter notes by case-insensitive match on title, limit to 10
   const filteredNotes = useMemo(() => {
     const q = query.toLowerCase();
     return notes
-      .filter(
-        (note) =>
-          note.title.toLowerCase().includes(q) ||
-          note.slug.toLowerCase().includes(q)
-      )
+      .filter((note) => note.title.toLowerCase().includes(q))
       .slice(0, 10);
   }, [notes, query]);
 
@@ -111,7 +107,7 @@ export function LinkAutocomplete({
             onCreateNew?.(query);
           } else if (filteredNotes[selectedIndex]) {
             const note = filteredNotes[selectedIndex];
-            onSelect(note.slug, note.title);
+            onSelect(note.title);
           }
           break;
         case "Escape":
@@ -151,8 +147,8 @@ export function LinkAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  const handleItemClick = (slug: string, title: string) => {
-    onSelect(slug, title);
+  const handleItemClick = (title: string) => {
+    onSelect(title);
   };
 
   const handleCreateClick = () => {
@@ -220,11 +216,11 @@ export function LinkAutocomplete({
       ) : (
         filteredNotes.map((note, index) => (
           <button
-            key={note.slug}
+            key={note.title}
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
-            onClick={() => handleItemClick(note.slug, note.title)}
+            onClick={() => handleItemClick(note.title)}
             onMouseEnter={() => setSelectedIndex(index)}
             className={`w-full text-left px-3 py-2 text-sm transition-colors ${
               selectedIndex === index ? "bg-purple-600/50" : "hover:bg-white/10"
@@ -232,9 +228,6 @@ export function LinkAutocomplete({
             style={{ color: "#e8e6e3" }}
           >
             <div className="truncate">{note.title}</div>
-            {note.slug !== note.title.toLowerCase().replace(/\s+/g, "-") && (
-              <div className="text-xs text-gray-400 truncate">{note.slug}</div>
-            )}
           </button>
         ))
       )}

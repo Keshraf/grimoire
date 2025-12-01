@@ -64,9 +64,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 
       if (links) {
         links.forEach((link) => {
-          const existing = backlinkMap.get(link.target_slug) || [];
-          existing.push(link.source_slug);
-          backlinkMap.set(link.target_slug, existing);
+          const existing = backlinkMap.get(link.target_title) || [];
+          existing.push(link.source_title);
+          backlinkMap.set(link.target_title, existing);
         });
       }
     }
@@ -74,13 +74,23 @@ export async function GET(request: NextRequest): Promise<Response> {
     // Create zip
     const zip = new JSZip();
 
+    // Create sanitized filename from title
+    const sanitizeFilename = (title: string): string => {
+      return title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+    };
+
     for (const note of notes as Note[]) {
       const backlinks = includeBacklinks
-        ? backlinkMap.get(note.slug)
+        ? backlinkMap.get(note.title)
         : undefined;
       const frontmatter = generateFrontmatter(note, backlinks);
       const fileContent = `${frontmatter}\n\n${note.content}`;
-      zip.file(`${note.slug}.md`, fileContent);
+      const filename = sanitizeFilename(note.title) || "untitled";
+      zip.file(`${filename}.md`, fileContent);
     }
 
     const content = await zip.generateAsync({ type: "arraybuffer" });

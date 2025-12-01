@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import matter from "gray-matter";
 import { createClient } from "@/lib/supabase/server";
-import { generateSlug, syncLinks } from "@/lib/links";
+import { syncLinks } from "@/lib/links";
 
 interface ImportError {
   filename: string;
@@ -51,28 +51,25 @@ export async function POST(
           ? frontmatter.tags
           : [];
 
-        // Generate slug
-        const slug = generateSlug(title);
-
-        if (!slug) {
+        if (!title) {
           errors.push({
             filename: file.name,
-            error: "Could not generate valid slug",
+            error: "Could not determine note title",
           });
           continue;
         }
 
-        // Check for existing note with same slug
+        // Check for existing note with same title
         const { data: existing } = await supabase
           .from("notes")
-          .select("slug")
-          .eq("slug", slug)
+          .select("title")
+          .eq("title", title)
           .single();
 
         if (existing) {
           errors.push({
             filename: file.name,
-            error: `Note with slug "${slug}" already exists`,
+            error: `Note with title "${title}" already exists`,
           });
           continue;
         }
@@ -81,7 +78,6 @@ export async function POST(
         const { error: insertError } = await supabase.from("notes").insert({
           title,
           content: body,
-          slug,
           tags,
           section: frontmatter.section,
           order: frontmatter.order,
@@ -94,9 +90,9 @@ export async function POST(
 
         // Sync wikilinks
         try {
-          await syncLinks(slug, body);
+          await syncLinks(title, body);
         } catch (linkError) {
-          console.error(`Failed to sync links for ${slug}:`, linkError);
+          console.error(`Failed to sync links for ${title}:`, linkError);
         }
 
         imported++;

@@ -3,12 +3,12 @@
 import type { NexusConfig } from "@/types";
 
 interface LinearNavProps {
-  currentSlug: string;
+  currentTitle: string;
   config: NexusConfig;
-  onNavigate: (slug: string) => void;
+  onNavigate: (title: string) => void;
 }
 
-export function LinearNav({ currentSlug, config, onNavigate }: LinearNavProps) {
+export function LinearNav({ currentTitle, config, onNavigate }: LinearNavProps) {
   const sections = config.navigation?.sections || [];
 
   // Build flat list of all pages in order
@@ -17,40 +17,40 @@ export function LinearNav({ currentSlug, config, onNavigate }: LinearNavProps) {
     section.pages.forEach((page) => allPages.push(page));
   });
 
-  const currentIndex = allPages.indexOf(currentSlug);
+  const currentIndex = allPages.indexOf(currentTitle);
   if (currentIndex === -1) return null;
 
-  const prevSlug = currentIndex > 0 ? allPages[currentIndex - 1] : null;
-  const nextSlug =
+  const prevTitle = currentIndex > 0 ? allPages[currentIndex - 1] : null;
+  const nextTitle =
     currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : null;
 
-  if (!prevSlug && !nextSlug) return null;
+  if (!prevTitle && !nextTitle) return null;
 
   return (
     <nav
       className="flex items-center justify-between px-4 py-3 border-t border-white/10"
       style={{ backgroundColor: config.theme.colors?.surface }}
     >
-      {prevSlug ? (
+      {prevTitle ? (
         <button
-          onClick={() => onNavigate(prevSlug)}
+          onClick={() => onNavigate(prevTitle)}
           className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
           style={{ color: config.theme.colors?.text_muted }}
         >
           <ChevronLeftIcon />
-          <span className="truncate max-w-[120px]">{prevSlug}</span>
+          <span className="truncate max-w-[120px]">{prevTitle}</span>
         </button>
       ) : (
         <div />
       )}
 
-      {nextSlug ? (
+      {nextTitle ? (
         <button
-          onClick={() => onNavigate(nextSlug)}
+          onClick={() => onNavigate(nextTitle)}
           className="flex items-center gap-2 px-3 py-1.5 text-sm rounded hover:bg-white/10 transition-colors"
           style={{ color: config.theme.colors?.text_muted }}
         >
-          <span className="truncate max-w-[120px]">{nextSlug}</span>
+          <span className="truncate max-w-[120px]">{nextTitle}</span>
           <ChevronRightIcon />
         </button>
       ) : (

@@ -6,7 +6,7 @@ import type { NexusConfig } from "@/types";
 interface BacklinksPanelProps {
   backlinks: string[];
   config: NexusConfig;
-  onLinkClick: (slug: string) => void;
+  onLinkClick: (title: string) => void;
 }
 
 export function BacklinksPanel({
@@ -38,14 +38,14 @@ export function BacklinksPanel({
 
       {expanded && (
         <div className="px-4 pb-3 space-y-1">
-          {backlinks.map((slug) => (
+          {backlinks.map((title) => (
             <button
-              key={slug}
-              onClick={() => onLinkClick(slug)}
+              key={title}
+              onClick={() => onLinkClick(title)}
               className="block w-full text-left px-2 py-1 text-sm rounded hover:bg-white/10 transition-colors truncate"
               style={{ color: config.theme.colors?.accent }}
             >
-              {slug}
+              {title}
             </button>
           ))}
         </div>

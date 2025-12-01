@@ -71,19 +71,19 @@ export function MainApp() {
     }
 
     // Find home or index note, otherwise use first note
-    const homeNote = notes.find((n) => n.slug === "home" || n.slug === "index");
-    const initialSlug = homeNote?.slug || notes[0]?.slug;
+    const homeNote = notes.find((n) => n.title.toLowerCase() === "home" || n.title.toLowerCase() === "index");
+    const initialTitle = homeNote?.title || notes[0]?.title;
 
-    if (initialSlug) {
-      pushPane(initialSlug);
+    if (initialTitle) {
+      pushPane(initialTitle);
     }
     initializedRef.current = true;
   }, [notes, notesLoading, configLoading, state.panes.length, pushPane]);
 
   // Handle page click from sidebar - replaces entire stack with just this note
   const handlePageClick = useCallback(
-    (slug: string) => {
-      replaceAll(slug);
+    (title: string) => {
+      replaceAll(title);
     },
     [replaceAll]
   );
@@ -92,15 +92,13 @@ export function MainApp() {
   const handleNewNote = useCallback(async () => {
     const timestamp = Date.now();
     const title = `Untitled ${timestamp}`;
-    const slug = `untitled-${timestamp}`;
 
     try {
       await createNoteMutation.mutateAsync({
         title,
-        slug,
         content: "",
       });
-      pushPane(slug);
+      pushPane(title);
     } catch (error) {
       console.error("Failed to create note:", error);
     }
@@ -108,8 +106,8 @@ export function MainApp() {
 
   // Handle search result selection - replaces entire stack with selected note
   const handleSearchSelect = useCallback(
-    (slug: string) => {
-      replaceAll(slug);
+    (title: string) => {
+      replaceAll(title);
       setSearchOpen(false);
     },
     [replaceAll]

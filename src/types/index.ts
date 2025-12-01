@@ -1,8 +1,8 @@
 // Database record for a note
+// Title is the primary identifier (unique)
 export interface Note {
   id: string;
-  slug: string;
-  title: string;
+  title: string;  // Primary identifier, must be unique
   content: string;
   tags: string[];
   section?: string;
@@ -21,8 +21,8 @@ export interface NoteWithLinks extends Note {
 // Database record for a link between notes
 export interface Link {
   id: string;
-  source_slug: string;
-  target_slug: string;
+  source_title: string;
+  target_title: string;
   created_at: string;
 }
 
@@ -46,7 +46,7 @@ export interface GraphData {
 // Multi-pane navigation types
 export interface Pane {
   id: string;
-  slug: string;
+  title: string;  // Note title (primary identifier)
   mode: "view" | "edit";
   scrollTop: number;
 }
@@ -57,23 +57,23 @@ export interface NavigationState {
 }
 
 export type NavigationAction =
-  | { type: "PUSH_PANE"; slug: string; afterIndex: number }
-  | { type: "REPLACE_ALL"; slug: string }
+  | { type: "PUSH_PANE"; title: string; afterIndex: number }
+  | { type: "REPLACE_ALL"; title: string }
   | { type: "CLOSE_PANE"; index: number }
   | { type: "SET_ACTIVE"; index: number }
   | { type: "SET_MODE"; index: number; mode: "view" | "edit" }
-  | { type: "NAVIGATE_LINEAR"; slug: string; afterIndex: number }
-  | { type: "RESTORE_FROM_URL"; slugs: string[] };
+  | { type: "NAVIGATE_LINEAR"; title: string; afterIndex: number }
+  | { type: "RESTORE_FROM_URL"; titles: string[] };
 
 export interface NavigationContextValue {
   state: NavigationState;
   dispatch: React.Dispatch<NavigationAction>;
-  pushPane: (slug: string, afterIndex?: number) => void;
-  replaceAll: (slug: string) => void;
+  pushPane: (title: string, afterIndex?: number) => void;
+  replaceAll: (title: string) => void;
   closePane: (index: number) => void;
   setActive: (index: number) => void;
   setMode: (index: number, mode: "view" | "edit") => void;
-  navigateLinear: (slug: string, afterIndex?: number) => void;
+  navigateLinear: (title: string, afterIndex?: number) => void;
 }
 
 // Configuration types
@@ -156,8 +156,7 @@ export interface NexusConfig {
 
 // Search types
 export interface SearchResult {
-  slug: string;
-  title: string;
+  title: string;  // Primary identifier
   excerpt: string;
   score: number;
 }
@@ -238,30 +237,29 @@ export type MCPResponse<T = unknown> = MCPSuccessResponse<T> | MCPErrorResponse;
 
 // MCP tool result types
 export interface ListPagesResult {
-  pages: Array<{ slug: string; title: string }>;
+  pages: Array<{ title: string }>;
 }
 
 export interface GetPageResult {
-  slug: string;
   title: string;
   content: string;
-  outlinks: string[];
-  backlinks: string[];
+  outlinks: string[];  // Array of titles
+  backlinks: string[];  // Array of titles
 }
 
 export interface SearchToolResult {
-  results: Array<{ slug: string; title: string; excerpt: string }>;
+  results: Array<{ title: string; excerpt: string }>;
 }
 
 export interface AskToolResult {
   answer: string;
-  sources: Array<{ slug: string; title: string }>;
+  sources: Array<{ title: string }>;
 }
 
 export interface GetConnectionsResult {
-  slug: string;
-  outlinks: string[];
-  backlinks: string[];
+  title: string;
+  outlinks: string[];  // Array of titles
+  backlinks: string[];  // Array of titles
   localGraph: {
     nodes: Array<{ id: string; title: string; connections: number }>;
     edges: Array<{ source: string; target: string }>;

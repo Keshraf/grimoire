@@ -4,47 +4,48 @@ import { useEffect, useRef } from "react";
 import { useNavigation } from "./useNavigation";
 
 /**
- * Parse URL to extract slugs from pathname and search params
- * URL format: /[slug]?stack=slug2,slug3
+ * Parse URL to extract titles from query params
+ * URL format: /?note=Title&stack=Title2,Title3
  */
-export function parseURLToSlugs(pathname: string, search: string): string[] {
-  const slugs: string[] = [];
+export function parseURLToTitles(search: string): string[] {
+  const titles: string[] = [];
+  const params = new URLSearchParams(search);
 
-  // Extract first slug from pathname (remove leading slash)
-  const firstSlug = pathname.replace(/^\//, "").split("/")[0];
-  if (firstSlug) {
-    slugs.push(firstSlug);
+  // Extract first title from ?note= param
+  const firstTitle = params.get("note");
+  if (firstTitle) {
+    titles.push(decodeURIComponent(firstTitle));
   }
 
-  // Extract additional slugs from ?stack= query param
-  const params = new URLSearchParams(search);
+  // Extract additional titles from ?stack= query param
   const stack = params.get("stack");
   if (stack) {
-    const additionalSlugs = stack.split(",").filter(Boolean);
-    slugs.push(...additionalSlugs);
+    const additionalTitles = stack.split(",").filter(Boolean).map(t => decodeURIComponent(t));
+    titles.push(...additionalTitles);
   }
 
-  return slugs;
+  return titles;
 }
 
 /**
- * Build URL from array of slugs
- * Single pane: /[slug]
- * Multiple panes: /[slug]?stack=slug2,slug3
+ * Build URL from array of titles
+ * Single pane: /?note=Title
+ * Multiple panes: /?note=Title&stack=Title2,Title3
  */
-export function buildURLFromSlugs(slugs: string[]): string {
-  if (slugs.length === 0) {
+export function buildURLFromTitles(titles: string[]): string {
+  if (titles.length === 0) {
     return "/";
   }
 
-  const [firstSlug, ...rest] = slugs;
-  let url = `/${firstSlug}`;
+  const [firstTitle, ...rest] = titles;
+  const params = new URLSearchParams();
+  params.set("note", firstTitle);
 
   if (rest.length > 0) {
-    url += `?stack=${rest.join(",")}`;
+    params.set("stack", rest.map(t => encodeURIComponent(t)).join(","));
   }
 
-  return url;
+  return `/?${params.toString()}`;
 }
 
 /**
@@ -55,7 +56,7 @@ export function buildURLFromSlugs(slugs: string[]): string {
 export function useURLSync(): void {
   const { state, dispatch } = useNavigation();
   const isInitialized = useRef(false);
-  const prevSlugsRef = useRef<string[]>([]);
+  const prevTitlesRef = useRef<string[]>([]);
 
   // Restore from URL on mount
   useEffect(() => {
@@ -64,13 +65,10 @@ export function useURLSync(): void {
 
     if (typeof window === "undefined") return;
 
-    const slugs = parseURLToSlugs(
-      window.location.pathname,
-      window.location.search
-    );
+    const titles = parseURLToTitles(window.location.search);
 
-    if (slugs.length > 0) {
-      dispatch({ type: "RESTORE_FROM_URL", slugs });
+    if (titles.length > 0) {
+      dispatch({ type: "RESTORE_FROM_URL", titles });
     }
   }, [dispatch]);
 
@@ -79,19 +77,19 @@ export function useURLSync(): void {
     if (typeof window === "undefined") return;
     if (!isInitialized.current) return;
 
-    const currentSlugs = state.panes.map((p) => p.slug);
+    const currentTitles = state.panes.map((p) => p.title);
 
-    // Skip if slugs haven't changed
+    // Skip if titles haven't changed
     if (
-      currentSlugs.length === prevSlugsRef.current.length &&
-      currentSlugs.every((s, i) => s === prevSlugsRef.current[i])
+      currentTitles.length === prevTitlesRef.current.length &&
+      currentTitles.every((t, i) => t === prevTitlesRef.current[i])
     ) {
       return;
     }
 
-    prevSlugsRef.current = currentSlugs;
+    prevTitlesRef.current = currentTitles;
 
-    const newURL = buildURLFromSlugs(currentSlugs);
+    const newURL = buildURLFromTitles(currentTitles);
     window.history.replaceState(null, "", newURL);
   }, [state.panes]);
 }

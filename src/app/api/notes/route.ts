@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateSlug, syncLinks } from "@/lib/links";
+import { syncLinks } from "@/lib/links";
 
 export async function GET() {
   const supabase = await createClient();
@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
   const {
     title,
     content = "",
-    slug: providedSlug,
     tags = [],
     section,
     order,
@@ -43,18 +42,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
   }
 
-  const slug = providedSlug || generateSlug(title);
-
-  // Check for slug conflict
+  // Check for title conflict (title must be unique)
   const { data: existing } = await supabase
     .from("notes")
-    .select("slug")
-    .eq("slug", slug)
+    .select("id")
+    .eq("title", title)
     .single();
 
   if (existing) {
     return NextResponse.json(
-      { error: "A note with this slug already exists" },
+      { error: "A note with this title already exists" },
       { status: 409 }
     );
   }
@@ -62,20 +59,21 @@ export async function POST(request: NextRequest) {
   // Insert the note
   const { data: note, error: insertError } = await supabase
     .from("notes")
-    .insert({ title, content, slug, tags, section, order })
+    .insert({ title, content, tags, section, order })
     .select()
     .single();
 
   if (insertError) {
+    console.error("Insert error:", insertError);
     return NextResponse.json(
       { error: "Failed to create note" },
       { status: 500 }
     );
   }
 
-  // Sync wikilinks
+  // Sync wikilinks (use title as the identifier)
   try {
-    await syncLinks(slug, content);
+    await syncLinks(title, content);
   } catch (err) {
     console.error("Failed to sync links:", err);
   }

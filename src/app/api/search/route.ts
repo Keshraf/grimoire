@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Use Supabase full-text search
     const { data: notes, error } = await supabase
       .from("notes")
-      .select("slug, title, content")
+      .select("title, content")
       .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
       .limit(20);
 
@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       const score = titleMatch ? 1 - index * 0.01 : 0.5 - index * 0.01;
 
       return {
-        slug: note.slug,
         title: note.title,
         excerpt,
         score,
@@ -90,11 +89,11 @@ export async function POST(request: NextRequest) {
       if (aiEnabled && apiKey && results.length > 0) {
         try {
           // Fetch full notes for AI context
-          const slugs = results.slice(0, 5).map((r) => r.slug);
+          const titles = results.slice(0, 5).map((r) => r.title);
           const { data: fullNotes } = await supabase
             .from("notes")
             .select("*")
-            .in("slug", slugs);
+            .in("title", titles);
 
           if (fullNotes && fullNotes.length > 0) {
             const provider = config.search?.ai?.provider || "openai";

@@ -15,7 +15,7 @@ interface PaneProps {
   isActive: boolean;
   config: NexusConfig;
   allNotes: Note[];
-  onLinkClick: (slug: string) => void;
+  onLinkClick: (title: string) => void;
   onClose: () => void;
   onSave: (content: string) => void;
   onTitleChange?: (newTitle: string) => void;
@@ -53,8 +53,8 @@ export function Pane({
     if (!showLocalGraph || !allNotes.length) {
       return { nodes: [], edges: [] };
     }
-    return getLocalGraph(note.slug, allNotes);
-  }, [showLocalGraph, note.slug, allNotes]);
+    return getLocalGraph(note.title, allNotes);
+  }, [showLocalGraph, note.title, allNotes]);
 
   return (
     <article
@@ -113,7 +113,7 @@ export function Pane({
           {showLinearNav && (
             <div className="px-6 pb-6">
               <LinearNav
-                currentSlug={note.slug}
+                currentTitle={note.title}
                 config={config}
                 onNavigate={onLinkClick}
               />
@@ -126,7 +126,7 @@ export function Pane({
       {showLocalGraph && localGraph.nodes.length > 0 && isActive && (
         <FloatingGraph
           graph={localGraph}
-          currentSlug={note.slug}
+          currentTitle={note.title}
           onNodeClick={onLinkClick}
           expanded={graphExpanded}
           onToggle={() => setGraphExpanded(!graphExpanded)}

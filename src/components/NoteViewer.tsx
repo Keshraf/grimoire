@@ -6,7 +6,7 @@ import type { NexusConfig } from "@/types";
 interface NoteViewerProps {
   html: string;
   config: NexusConfig;
-  onLinkClick: (slug: string) => void;
+  onLinkClick: (title: string) => void;
 }
 
 export function NoteViewer({ html, config, onLinkClick }: NoteViewerProps) {
@@ -19,9 +19,9 @@ export function NoteViewer({ html, config, onLinkClick }: NoteViewerProps) {
         e.preventDefault();
         const href = anchor.getAttribute("href");
         if (href) {
-          // Extract slug from href (removes leading /)
-          const slug = href.startsWith("/") ? href.slice(1) : href;
-          onLinkClick(slug);
+          // Extract title from href (removes leading /)
+          const title = decodeURIComponent(href.startsWith("/") ? href.slice(1) : href);
+          onLinkClick(title);
         }
       }
     },

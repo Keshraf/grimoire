@@ -41,7 +41,7 @@ const WikiLink = Node.create({
 
   addAttributes() {
     return {
-      slug: {
+      title: {
         default: null,
       },
       display: {
@@ -56,9 +56,11 @@ const WikiLink = Node.create({
         tag: 'a[data-internal="true"]',
         getAttrs: (node) => {
           const href = (node as HTMLElement).getAttribute("href");
-          const slug = href?.startsWith("/") ? href.slice(1) : href;
+          const title = href?.startsWith("/")
+            ? decodeURIComponent(href.slice(1))
+            : href ? decodeURIComponent(href) : null;
           return {
-            slug,
+            title,
             display: (node as HTMLElement).textContent,
           };
         },
@@ -70,11 +72,11 @@ const WikiLink = Node.create({
     return [
       "a",
       mergeAttributes({
-        href: `/${node.attrs.slug}`,
+        href: `/${encodeURIComponent(node.attrs.title)}`,
         "data-internal": "true",
         class: "internal-link text-purple-400 hover:text-purple-300 cursor-pointer",
       }),
-      node.attrs.display || node.attrs.slug,
+      node.attrs.display || node.attrs.title,
     ];
   },
 });
@@ -96,20 +98,20 @@ interface WysiwygEditorProps {
   config: EditorConfig;
   notes: Note[];
   onSave: (content: string) => void;
-  onLinkClick: (slug: string) => void;
+  onLinkClick: (title: string) => void;
   onCreateNote?: (title: string) => void;
   autoFocus?: boolean;
 }
 
 // Convert markdown to HTML for TipTap
 function markdownToHtml(markdown: string): string {
-  // Transform wikilinks to anchor tags
+  // Transform wikilinks to anchor tags (use title directly, URL encode it)
   const withLinks = markdown.replace(
     /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
-    (_, rawSlug, display) => {
-      const slug = rawSlug.toLowerCase().trim().replace(/\s+/g, "-");
-      const text = display ? display.trim() : rawSlug.trim();
-      return `<a href="/${slug}" data-internal="true">${text}</a>`;
+    (_, rawTitle, display) => {
+      const title = rawTitle.trim();
+      const text = display ? display.trim() : title;
+      return `<a href="/${encodeURIComponent(title)}" data-internal="true">${text}</a>`;
     }
   );
 
@@ -250,12 +252,12 @@ function inlineToMarkdown(nodes: Array<Record<string, unknown>>): string {
       const attrs = node.attrs as Record<string, unknown> | undefined;
 
       if (type === "wikiLink") {
-        const slug = attrs?.slug as string;
+        const title = attrs?.title as string;
         const display = attrs?.display as string;
-        if (display && display !== slug && display.toLowerCase().replace(/\s+/g, "-") !== slug) {
-          return `[[${slug}|${display}]]`;
+        if (display && display !== title) {
+          return `[[${title}|${display}]]`;
         }
-        return `[[${slug}]]`;
+        return `[[${title}]]`;
       }
 
       if (type === "text" && text) {
@@ -348,8 +350,8 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
             event.preventDefault();
             const href = anchor.getAttribute("href");
             if (href) {
-              const slug = href.startsWith("/") ? href.slice(1) : href;
-              onLinkClick(slug);
+              const title = decodeURIComponent(href.startsWith("/") ? href.slice(1) : href);
+              onLinkClick(title);
             }
             return true;
           }
@@ -453,7 +455,7 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
 
     // Insert wikilink
     const insertLink = useCallback(
-      (slug: string, title: string) => {
+      (title: string) => {
         if (!editor || !autocomplete.range) return;
 
         const { from, to } = autocomplete.range;
@@ -465,7 +467,7 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
           .deleteRange({ from, to })
           .insertContent({
             type: "wikiLink",
-            attrs: { slug, display: title },
+            attrs: { title, display: title },
           })
           .run();
 
@@ -477,11 +479,7 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
     // Handle create new note
     const handleCreateNew = useCallback(
       (title: string) => {
-        const slug = title
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, "");
-        insertLink(slug, title);
+        insertLink(title);
         onCreateNote?.(title);
       },
       [insertLink, onCreateNote]

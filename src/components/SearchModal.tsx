@@ -6,7 +6,7 @@ import type { NexusConfig, SearchResult, AISearchResult } from "@/types";
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (slug: string) => void;
+  onSelect: (title: string) => void;
   config: NexusConfig;
 }
 
@@ -111,7 +111,7 @@ export function SearchModal({
       case "Enter":
         e.preventDefault();
         if (results[selectedIndex]) {
-          handleSelect(results[selectedIndex].slug);
+          handleSelect(results[selectedIndex].title);
         }
         break;
       case "Escape":
@@ -121,8 +121,8 @@ export function SearchModal({
     }
   };
 
-  const handleSelect = (slug: string) => {
-    onSelect(slug);
+  const handleSelect = (title: string) => {
+    onSelect(title);
     onClose();
   };
 
@@ -203,10 +203,10 @@ export function SearchModal({
                 <div className="mt-2 text-xs text-[var(--color-text-muted,#a8a6a3)]">
                   Based on:{" "}
                   {aiAnswer.sources.map((s, i) => (
-                    <span key={s.slug}>
+                    <span key={s.title}>
                       {i > 0 && ", "}
                       <button
-                        onClick={() => handleSelect(s.slug)}
+                        onClick={() => handleSelect(s.title)}
                         className="text-[var(--color-accent,#c77dff)] hover:underline"
                       >
                         {s.title}
@@ -223,9 +223,9 @@ export function SearchModal({
             <div className="py-2">
               {results.map((result, index) => (
                 <button
-                  key={result.slug}
+                  key={result.title}
                   data-index={index}
-                  onClick={() => handleSelect(result.slug)}
+                  onClick={() => handleSelect(result.title)}
                   className={`w-full px-4 py-3 text-left transition-colors ${
                     index === selectedIndex
                       ? "bg-[var(--color-primary,#7b2cbf)]/20"

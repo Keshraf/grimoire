@@ -11,11 +11,11 @@ import { extractOutlinks, renderMarkdown } from "@/lib/markdown";
 // Re-export for provider setup
 export { QueryClient, QueryClientProvider };
 
-// Query keys
+// Query keys - now use title instead of slug
 export const noteKeys = {
   all: ["notes"] as const,
   lists: () => [...noteKeys.all, "list"] as const,
-  detail: (slug: string) => [...noteKeys.all, "detail", slug] as const,
+  detail: (title: string) => [...noteKeys.all, "detail", title] as const,
 };
 
 // API response types
@@ -33,7 +33,6 @@ interface NoteResponse {
 export interface CreateNoteInput {
   title: string;
   content?: string;
-  slug?: string;
   tags?: string[];
   section?: string;
   order?: number;
@@ -55,8 +54,8 @@ async function fetchNotes(): Promise<Note[]> {
   return json.data;
 }
 
-async function fetchNote(slug: string): Promise<NoteWithLinks> {
-  const res = await fetch(`/api/notes/${slug}`);
+async function fetchNote(title: string): Promise<NoteWithLinks> {
+  const res = await fetch(`/api/notes/${encodeURIComponent(title)}`);
   const json: NoteResponse = await res.json();
   if (!res.ok) throw new Error(json.error || "Failed to fetch note");
 
@@ -83,8 +82,8 @@ async function createNote(input: CreateNoteInput): Promise<Note> {
   return json.data;
 }
 
-async function updateNote(slug: string, input: UpdateNoteInput): Promise<Note> {
-  const res = await fetch(`/api/notes/${slug}`, {
+async function updateNote(title: string, input: UpdateNoteInput): Promise<Note> {
+  const res = await fetch(`/api/notes/${encodeURIComponent(title)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -94,8 +93,8 @@ async function updateNote(slug: string, input: UpdateNoteInput): Promise<Note> {
   return json.data;
 }
 
-async function deleteNote(slug: string): Promise<void> {
-  const res = await fetch(`/api/notes/${slug}`, { method: "DELETE" });
+async function deleteNote(title: string): Promise<void> {
+  const res = await fetch(`/api/notes/${encodeURIComponent(title)}`, { method: "DELETE" });
   if (!res.ok) {
     const json = await res.json();
     throw new Error(json.error || "Failed to delete note");
@@ -115,11 +114,11 @@ export function useNotes() {
 /**
  * Fetch single note with backlinks and rendered HTML
  */
-export function useNote(slug: string) {
+export function useNote(title: string) {
   return useQuery({
-    queryKey: noteKeys.detail(slug),
-    queryFn: () => fetchNote(slug),
-    enabled: !!slug,
+    queryKey: noteKeys.detail(title),
+    queryFn: () => fetchNote(title),
+    enabled: !!title,
   });
 }
 
@@ -140,13 +139,13 @@ export function useCreateNote() {
 /**
  * Update an existing note
  */
-export function useUpdateNote(slug: string) {
+export function useUpdateNote(title: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateNoteInput) => updateNote(slug, input),
+    mutationFn: (input: UpdateNoteInput) => updateNote(title, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: noteKeys.detail(slug) });
+      queryClient.invalidateQueries({ queryKey: noteKeys.detail(title) });
       queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
     },
   });

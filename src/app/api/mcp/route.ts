@@ -25,7 +25,7 @@ const manifest: MCPManifest = {
     {
       name: "list_pages",
       description:
-        "List all pages in the knowledge base with their slugs and titles",
+        "List all pages in the knowledge base with their titles",
       inputSchema: {
         type: "object",
         properties: {},
@@ -39,12 +39,12 @@ const manifest: MCPManifest = {
       inputSchema: {
         type: "object",
         properties: {
-          slug: {
+          title: {
             type: "string",
-            description: "The URL slug of the page to retrieve",
+            description: "The title of the page to retrieve",
           },
         },
-        required: ["slug"],
+        required: ["title"],
       },
     },
     {
@@ -83,9 +83,9 @@ const manifest: MCPManifest = {
       inputSchema: {
         type: "object",
         properties: {
-          slug: { type: "string", description: "The URL slug of the page" },
+          title: { type: "string", description: "The title of the page" },
         },
-        required: ["slug"],
+        required: ["title"],
       },
     },
   ],
@@ -101,7 +101,7 @@ async function handleListPages(): Promise<ListPagesResult> {
   const supabase = await createClient();
   const { data: notes, error } = await supabase
     .from("notes")
-    .select("slug, title")
+    .select("title")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -111,19 +111,19 @@ async function handleListPages(): Promise<ListPagesResult> {
   return { pages: notes || [] };
 }
 
-async function handleGetPage(input: { slug: string }): Promise<GetPageResult> {
-  const { slug } = input;
+async function handleGetPage(input: { title: string }): Promise<GetPageResult> {
+  const { title } = input;
   const supabase = await createClient();
 
   // Fetch the note
   const { data: note, error } = await supabase
     .from("notes")
     .select("*")
-    .eq("slug", slug)
+    .eq("title", title)
     .single();
 
   if (error || !note) {
-    throw { status: 404, message: `Page '${slug}' not found` };
+    throw { status: 404, message: `Page '${title}' not found` };
   }
 
   // Extract outlinks from content
@@ -132,13 +132,12 @@ async function handleGetPage(input: { slug: string }): Promise<GetPageResult> {
   // Fetch backlinks
   const { data: links } = await supabase
     .from("links")
-    .select("source_slug")
-    .eq("target_slug", slug);
+    .select("source_title")
+    .eq("target_title", title);
 
-  const backlinks = links?.map((l) => l.source_slug) || [];
+  const backlinks = links?.map((l) => l.source_title) || [];
 
   return {
-    slug: note.slug,
     title: note.title,
     content: note.content,
     outlinks,
@@ -155,7 +154,7 @@ async function handleSearch(input: {
 
   const { data: notes, error } = await supabase
     .from("notes")
-    .select("slug, title, content")
+    .select("title, content")
     .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
     .limit(20);
 
@@ -184,7 +183,7 @@ async function handleSearch(input: {
       excerpt = content.slice(0, 150) + (content.length > 150 ? "..." : "");
     }
 
-    return { slug: note.slug, title: note.title, excerpt };
+    return { title: note.title, excerpt };
   });
 
   return { results };
@@ -228,25 +227,25 @@ async function handleAsk(input: { question: string }): Promise<AskToolResult> {
 
   return {
     answer: result.answer,
-    sources: result.sources.map((s) => ({ slug: s.slug, title: s.title })),
+    sources: result.sources.map((s) => ({ title: s.title })),
   };
 }
 
 async function handleGetConnections(input: {
-  slug: string;
+  title: string;
 }): Promise<GetConnectionsResult> {
-  const { slug } = input;
+  const { title } = input;
   const supabase = await createClient();
 
   // Verify note exists
   const { data: note, error } = await supabase
     .from("notes")
     .select("*")
-    .eq("slug", slug)
+    .eq("title", title)
     .single();
 
   if (error || !note) {
-    throw { status: 404, message: `Page '${slug}' not found` };
+    throw { status: 404, message: `Page '${title}' not found` };
   }
 
   // Extract outlinks
@@ -255,17 +254,17 @@ async function handleGetConnections(input: {
   // Fetch backlinks
   const { data: links } = await supabase
     .from("links")
-    .select("source_slug")
-    .eq("target_slug", slug);
+    .select("source_title")
+    .eq("target_title", title);
 
-  const backlinks = links?.map((l) => l.source_slug) || [];
+  const backlinks = links?.map((l) => l.source_title) || [];
 
   // Get all notes for local graph
   const { data: allNotes } = await supabase.from("notes").select("*");
-  const localGraph = getLocalGraph(slug, (allNotes as Note[]) || []);
+  const localGraph = getLocalGraph(title, (allNotes as Note[]) || []);
 
   return {
-    slug,
+    title,
     outlinks,
     backlinks,
     localGraph: {
@@ -305,13 +304,13 @@ export async function POST(
       }
 
       case "get_page": {
-        if (!input.slug || typeof input.slug !== "string") {
+        if (!input.title || typeof input.title !== "string") {
           return NextResponse.json(
-            { error: "Missing required parameter: slug" },
+            { error: "Missing required parameter: title" },
             { status: 400 }
           );
         }
-        const result = await handleGetPage({ slug: input.slug as string });
+        const result = await handleGetPage({ title: input.title as string });
         return NextResponse.json({ result });
       }
 
@@ -338,14 +337,14 @@ export async function POST(
       }
 
       case "get_connections": {
-        if (!input.slug || typeof input.slug !== "string") {
+        if (!input.title || typeof input.title !== "string") {
           return NextResponse.json(
-            { error: "Missing required parameter: slug" },
+            { error: "Missing required parameter: title" },
             { status: 400 }
           );
         }
         const result = await handleGetConnections({
-          slug: input.slug as string,
+          title: input.title as string,
         });
         return NextResponse.json({ result });
       }

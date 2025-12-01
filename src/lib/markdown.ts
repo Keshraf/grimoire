@@ -3,20 +3,13 @@ import remarkGfm from "remark-gfm";
 import remarkHtml from "remark-html";
 
 export interface ParsedLink {
-  slug: string;
+  title: string;
   display: string;
 }
 
 /**
- * Normalize a slug: lowercase and replace spaces with hyphens
- */
-function normalizeSlug(slug: string): string {
-  return slug.toLowerCase().trim().replace(/\s+/g, "-");
-}
-
-/**
  * Parse wiki-style links from markdown content
- * Finds [[slug]] and [[slug|display]] patterns
+ * Finds [[title]] and [[title|display]] patterns
  */
 export function parseLinks(markdown: string): ParsedLink[] {
   const linkPattern = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
@@ -24,11 +17,11 @@ export function parseLinks(markdown: string): ParsedLink[] {
   let match;
 
   while ((match = linkPattern.exec(markdown)) !== null) {
-    const rawSlug = match[1];
-    const display = match[2] || rawSlug;
+    const title = match[1].trim();
+    const display = match[2] ? match[2].trim() : title;
     links.push({
-      slug: normalizeSlug(rawSlug),
-      display: display.trim(),
+      title,
+      display,
     });
   }
 
@@ -36,25 +29,25 @@ export function parseLinks(markdown: string): ParsedLink[] {
 }
 
 /**
- * Extract unique outgoing link slugs from markdown content
+ * Extract unique outgoing link titles from markdown content
  */
 export function extractOutlinks(markdown: string): string[] {
   const links = parseLinks(markdown);
-  const uniqueSlugs = Array.from(new Set(links.map((link) => link.slug)));
-  return uniqueSlugs;
+  const uniqueTitles = Array.from(new Set(links.map((link) => link.title)));
+  return uniqueTitles;
 }
 
 /**
  * Transform wiki-style links to clickable anchor tags
- * Replaces [[slug]] and [[slug|display]] with <a> tags
+ * Replaces [[title]] and [[title|display]] with <a> tags
  */
 export function transformLinks(markdown: string): string {
   const linkPattern = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
 
-  return markdown.replace(linkPattern, (_, rawSlug, display) => {
-    const slug = normalizeSlug(rawSlug);
-    const text = display ? display.trim() : rawSlug.trim();
-    return `<a href="/${slug}" data-internal="true" class="internal-link">${text}</a>`;
+  return markdown.replace(linkPattern, (_, rawTitle, display) => {
+    const title = rawTitle.trim();
+    const text = display ? display.trim() : title;
+    return `<a href="/${encodeURIComponent(title)}" data-internal="true" class="internal-link">${text}</a>`;
   });
 }
 

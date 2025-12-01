@@ -10,7 +10,7 @@ interface InlineNoteEditorProps {
   config: NexusConfig;
   notes: Note[];
   onSave: (content: string) => void;
-  onLinkClick: (slug: string) => void;
+  onLinkClick: (title: string) => void;
   onCreateNote?: (title: string) => void;
 }
 
