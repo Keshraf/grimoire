@@ -20,6 +20,7 @@ interface PaneProps {
   onSave: (content: string) => void;
   onTitleChange?: (newTitle: string) => void;
   onCreateNote?: (title: string) => void;
+  onDelete?: () => void;
 }
 
 export function Pane({
@@ -33,6 +34,7 @@ export function Pane({
   onSave,
   onTitleChange,
   onCreateNote,
+  onDelete,
 }: PaneProps) {
   const [graphExpanded, setGraphExpanded] = useState(
     config.layout.graph?.default_expanded ?? true
@@ -79,6 +81,7 @@ export function Pane({
         config={config}
         onClose={onClose}
         onTitleChange={onTitleChange}
+        onDelete={onDelete}
         showClose={index > 0}
       />
 

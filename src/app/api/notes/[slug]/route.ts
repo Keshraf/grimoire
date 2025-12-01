@@ -95,7 +95,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   // Check if note exists
   const { data: existing, error: fetchError } = await supabase
     .from("notes")
-    .select("slug")
+    .select("slug, title")
     .eq("slug", slug)
     .single();
 
@@ -103,6 +103,70 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Note not found" }, { status: 404 });
   }
 
+  // Find all notes that link TO this note (backlinks)
+  // The links table stores target_slug as either "slug" or "slug|display text"
+  // So we need to match both patterns
+  const { data: backlinksExact } = await supabase
+    .from("links")
+    .select("source_slug")
+    .eq("target_slug", slug);
+
+  const { data: backlinksWithDisplay } = await supabase
+    .from("links")
+    .select("source_slug")
+    .like("target_slug", `${slug}|%`);
+
+  // Combine and deduplicate backlinks
+  const allBacklinks = [
+    ...(backlinksExact || []),
+    ...(backlinksWithDisplay || []),
+  ];
+  const uniqueSourceSlugs = Array.from(new Set(allBacklinks.map((b) => b.source_slug)));
+
+  // Update each backlinking note to convert [[slug]] to plain text
+  if (uniqueSourceSlugs.length > 0) {
+    // Escape special regex characters in slug
+    const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    for (const sourceSlug of uniqueSourceSlugs) {
+      const { data: sourceNote } = await supabase
+        .from("notes")
+        .select("content")
+        .eq("slug", sourceSlug)
+        .single();
+
+      if (sourceNote?.content) {
+        // Replace [[slug]] or [[slug|display text]] with plain text
+        // Use the display text if present, otherwise use the original title
+        const updatedContent = sourceNote.content.replace(
+          new RegExp(`\\[\\[${escapedSlug}(?:\\|([^\\]]+))?\\]\\]`, "g"),
+          (_match: string, displayText: string) => displayText || existing.title
+        );
+
+        if (updatedContent !== sourceNote.content) {
+          // Update the note's content
+          const { error: updateError } = await supabase
+            .from("notes")
+            .update({ content: updatedContent })
+            .eq("slug", sourceSlug);
+
+          if (updateError) {
+            console.error(`Failed to update note ${sourceSlug}:`, updateError);
+            continue;
+          }
+
+          // Re-sync links for this note
+          try {
+            await syncLinks(sourceSlug, updatedContent);
+          } catch (err) {
+            console.error(`Failed to sync links for ${sourceSlug}:`, err);
+          }
+        }
+      }
+    }
+  }
+
+  // Delete the note (CASCADE will handle links FROM this note)
   const { error: deleteError } = await supabase
     .from("notes")
     .delete()

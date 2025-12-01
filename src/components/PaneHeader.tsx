@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { NexusConfig } from "@/types";
+import { PaneMenu } from "./PaneMenu";
 
 interface PaneHeaderProps {
   title: string;
   config: NexusConfig;
   onClose: () => void;
   onTitleChange?: (newTitle: string) => void;
+  onDelete?: () => void;
   showClose?: boolean;
 }
 
@@ -16,6 +18,7 @@ export function PaneHeader({
   config,
   onClose,
   onTitleChange,
+  onDelete,
   showClose = true,
 }: PaneHeaderProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -97,7 +100,11 @@ export function PaneHeader({
         </h1>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        <PaneMenu
+          onDelete={onDelete}
+          textColor={config.theme.colors?.text_muted}
+        />
         {showClose && (
           <button
             onClick={onClose}

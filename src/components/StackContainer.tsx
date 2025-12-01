@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
-import { useNotes, useNote, useUpdateNote, useCreateNote } from "@/hooks/useNotes";
+import { useNotes, useNote, useUpdateNote, useCreateNote, useDeleteNote } from "@/hooks/useNotes";
 import type { NexusConfig } from "@/types";
 import { Pane } from "./Pane";
 
@@ -74,6 +74,22 @@ export function StackContainer({ config }: StackContainerProps) {
     [createNoteMutation]
   );
 
+  const handleDeleteNote = useCallback(
+    (deletedSlug: string) => {
+      // Close all panes that have this slug (there could be multiple)
+      // We iterate in reverse to avoid index shifting issues
+      const indicesToClose = state.panes
+        .map((pane, index) => (pane.slug === deletedSlug ? index : -1))
+        .filter((i) => i !== -1)
+        .reverse();
+
+      for (const index of indicesToClose) {
+        closePane(index);
+      }
+    },
+    [state.panes, closePane]
+  );
+
   if (state.panes.length === 0) {
     return (
       <div
@@ -105,6 +121,7 @@ export function StackContainer({ config }: StackContainerProps) {
           onClose={() => handleClose(index)}
           onSetActive={() => setActive(index)}
           onCreateNote={handleCreateNote}
+          onDeleteNote={handleDeleteNote}
         />
       ))}
     </div>
@@ -135,6 +152,8 @@ interface PaneWrapperProps {
   onCreateNote?: (title: string) => void;
   /** Optional callback when renaming a note's title */
   onTitleChange?: (newTitle: string) => void;
+  /** Optional callback when deleting this note */
+  onDeleteNote?: (slug: string) => void;
 }
 
 /**
@@ -156,9 +175,11 @@ function PaneWrapper({
   onSetActive,
   onCreateNote,
   onTitleChange,
+  onDeleteNote,
 }: PaneWrapperProps) {
   const { data: note, isLoading, error } = useNote(slug);
   const updateNoteMutation = useUpdateNote(slug);
+  const deleteNoteMutation = useDeleteNote();
 
   const handleSave = useCallback(
     async (content: string) => {
@@ -174,6 +195,19 @@ function PaneWrapper({
     },
     [updateNoteMutation, onTitleChange]
   );
+
+  const handleDelete = useCallback(async () => {
+    if (!note) return;
+
+    const confirmed = window.confirm(
+      `Delete "${note.title}"?\n\nThis will also remove links to this note from other notes. This action cannot be undone.`
+    );
+
+    if (confirmed) {
+      await deleteNoteMutation.mutateAsync(slug);
+      onDeleteNote?.(slug);
+    }
+  }, [note, slug, deleteNoteMutation, onDeleteNote]);
 
   if (isLoading) {
     return (
@@ -230,6 +264,7 @@ function PaneWrapper({
         onSave={handleSave}
         onTitleChange={handleTitleChange}
         onCreateNote={onCreateNote}
+        onDelete={handleDelete}
       />
     </div>
   );
