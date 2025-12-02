@@ -60,6 +60,8 @@ export type NavigationAction =
   | { type: "PUSH_PANE"; title: string; afterIndex: number }
   | { type: "REPLACE_ALL"; title: string }
   | { type: "CLOSE_PANE"; index: number }
+  | { type: "CLOSE_PANES_BY_TITLE"; title: string }
+  | { type: "UPDATE_PANE_TITLE"; oldTitle: string; newTitle: string }
   | { type: "SET_ACTIVE"; index: number }
   | { type: "SET_MODE"; index: number; mode: "view" | "edit" }
   | { type: "NAVIGATE_LINEAR"; title: string; afterIndex: number }
@@ -71,6 +73,8 @@ export interface NavigationContextValue {
   pushPane: (title: string, afterIndex?: number) => void;
   replaceAll: (title: string) => void;
   closePane: (index: number) => void;
+  closePanesByTitle: (title: string) => void;
+  updatePaneTitle: (oldTitle: string, newTitle: string) => void;
   setActive: (index: number) => void;
   setMode: (index: number, mode: "view" | "edit") => void;
   navigateLinear: (title: string, afterIndex?: number) => void;

@@ -144,9 +144,17 @@ export function useUpdateNote(title: string) {
 
   return useMutation({
     mutationFn: (input: UpdateNoteInput) => updateNote(title, input),
-    onSuccess: () => {
+    onSuccess: (updatedNote: Note) => {
+      // Always invalidate the original title's cache
       queryClient.invalidateQueries({ queryKey: noteKeys.detail(title) });
-      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+
+      // If title changed, also invalidate the new title's cache
+      if (updatedNote.title !== title) {
+        queryClient.invalidateQueries({ queryKey: noteKeys.detail(updatedNote.title) });
+      }
+
+      // Invalidate all note lists and details to ensure backlinks are updated
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
   });
 }
@@ -160,7 +168,9 @@ export function useDeleteNote() {
   return useMutation({
     mutationFn: deleteNote,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+      // Invalidate ALL note queries (lists and details) so backlink changes are reflected
+      // When a note is deleted, other notes' content is updated to remove [[links]] to it
+      queryClient.invalidateQueries({ queryKey: noteKeys.all });
     },
   });
 }

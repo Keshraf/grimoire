@@ -35,7 +35,7 @@ interface StackContainerProps {
  * ```
  */
 export function StackContainer({ config }: StackContainerProps) {
-  const { state, pushPane, closePane, setActive } = useNavigation();
+  const { state, pushPane, closePane, closePanesByTitle, updatePaneTitle, setActive } = useNavigation();
   const { data: allNotes = [] } = useNotes();
   const containerRef = useRef<HTMLDivElement>(null);
   const createNoteMutation = useCreateNote();
@@ -75,18 +75,18 @@ export function StackContainer({ config }: StackContainerProps) {
 
   const handleDeleteNote = useCallback(
     (deletedTitle: string) => {
-      // Close all panes that have this title (there could be multiple)
-      // We iterate in reverse to avoid index shifting issues
-      const indicesToClose = state.panes
-        .map((pane, index) => (pane.title === deletedTitle ? index : -1))
-        .filter((i) => i !== -1)
-        .reverse();
-
-      for (const index of indicesToClose) {
-        closePane(index);
-      }
+      // Close all panes that have this title
+      closePanesByTitle(deletedTitle);
     },
-    [state.panes, closePane]
+    [closePanesByTitle]
+  );
+
+  const handleTitleChange = useCallback(
+    (oldTitle: string, newTitle: string) => {
+      // Update the pane title in navigation state
+      updatePaneTitle(oldTitle, newTitle);
+    },
+    [updatePaneTitle]
   );
 
   if (state.panes.length === 0) {
@@ -120,6 +120,7 @@ export function StackContainer({ config }: StackContainerProps) {
           onClose={() => handleClose(index)}
           onSetActive={() => setActive(index)}
           onCreateNote={handleCreateNote}
+          onTitleChange={(newTitle) => handleTitleChange(pane.title, newTitle)}
           onDeleteNote={handleDeleteNote}
         />
       ))}

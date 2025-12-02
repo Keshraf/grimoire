@@ -4,7 +4,7 @@ export {
   navigationReducer,
 } from "./useNavigation";
 
-export { useURLSync, parseURLToTitles, buildURLFromTitles } from "./useURLSync";
+export { useURLSync, parseURLToTitles } from "./useURLSync";
 
 export {
   useNotes,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseWikilinks, generateSlug } from "./links";
+import { parseWikilinks } from "./links";
 
 describe("parseWikilinks", () => {
   it("returns empty array for empty content", () => {
@@ -28,37 +28,18 @@ describe("parseWikilinks", () => {
     expect(parseWikilinks(content)).toEqual([]);
   });
 
-  it("handles wikilinks with spaces in slug", () => {
+  it("handles wikilinks with spaces in title", () => {
     const content = "See [[my note title]] for more.";
     expect(parseWikilinks(content)).toEqual(["my note title"]);
   });
-});
 
-describe("generateSlug", () => {
-  it("converts basic title to slug", () => {
-    expect(generateSlug("My Note Title")).toBe("my-note-title");
+  it("extracts title from wikilinks with display text", () => {
+    const content = "See [[actual-title|Display Text]] for more.";
+    expect(parseWikilinks(content)).toEqual(["actual-title"]);
   });
 
-  it("removes special characters", () => {
-    expect(generateSlug("Hello! World?")).toBe("hello-world");
-    expect(generateSlug("Test@#$%^&*()")).toBe("test");
-  });
-
-  it("handles multiple spaces", () => {
-    expect(generateSlug("Multiple   Spaces   Here")).toBe(
-      "multiple-spaces-here"
-    );
-  });
-
-  it("trims leading and trailing whitespace", () => {
-    expect(generateSlug("  Trimmed Title  ")).toBe("trimmed-title");
-  });
-
-  it("removes leading and trailing hyphens", () => {
-    expect(generateSlug("---Title---")).toBe("title");
-  });
-
-  it("handles numbers", () => {
-    expect(generateSlug("Note 123")).toBe("note-123");
+  it("handles mixed wikilinks with and without display text", () => {
+    const content = "See [[note-one]] and [[note-two|Note Two Display]].";
+    expect(parseWikilinks(content)).toEqual(["note-one", "note-two"]);
   });
 });

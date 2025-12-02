@@ -84,6 +84,30 @@ export function navigationReducer(
       };
     }
 
+    case "CLOSE_PANES_BY_TITLE": {
+      const { title } = action;
+      const newPanes = state.panes.filter((pane) => pane.title !== title);
+      const newActiveIndex = Math.min(
+        state.activePaneIndex,
+        Math.max(0, newPanes.length - 1)
+      );
+      return {
+        panes: newPanes,
+        activePaneIndex: newActiveIndex,
+      };
+    }
+
+    case "UPDATE_PANE_TITLE": {
+      const { oldTitle, newTitle } = action;
+      const newPanes = state.panes.map((pane) =>
+        pane.title === oldTitle ? { ...pane, title: newTitle } : pane
+      );
+      return {
+        ...state,
+        panes: newPanes,
+      };
+    }
+
     case "SET_ACTIVE": {
       const { index } = action;
       const clampedIndex = Math.max(0, Math.min(index, state.panes.length - 1));
@@ -170,6 +194,14 @@ export function NavigationProvider({
     dispatch({ type: "CLOSE_PANE", index });
   }, []);
 
+  const closePanesByTitle = useCallback((title: string) => {
+    dispatch({ type: "CLOSE_PANES_BY_TITLE", title });
+  }, []);
+
+  const updatePaneTitle = useCallback((oldTitle: string, newTitle: string) => {
+    dispatch({ type: "UPDATE_PANE_TITLE", oldTitle, newTitle });
+  }, []);
+
   const setActive = useCallback((index: number) => {
     dispatch({ type: "SET_ACTIVE", index });
   }, []);
@@ -192,6 +224,8 @@ export function NavigationProvider({
     pushPane,
     replaceAll,
     closePane,
+    closePanesByTitle,
+    updatePaneTitle,
     setActive,
     setMode,
     navigateLinear,

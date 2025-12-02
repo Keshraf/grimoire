@@ -1,63 +1,36 @@
 import { describe, it, expect } from "vitest";
-import { parseURLToSlugs, buildURLFromSlugs } from "../useURLSync";
+import { parseURLToTitles } from "../useURLSync";
 
-describe("parseURLToSlugs", () => {
-  it("extracts single slug from pathname", () => {
-    const result = parseURLToSlugs("/getting-started", "");
-    expect(result).toEqual(["getting-started"]);
+describe("parseURLToTitles", () => {
+  it("extracts single title from note param", () => {
+    const result = parseURLToTitles("?note=Getting%20Started");
+    expect(result).toEqual(["Getting Started"]);
   });
 
-  it("extracts multiple slugs from pathname and stack param", () => {
-    const result = parseURLToSlugs(
-      "/getting-started",
-      "?stack=api-reference,examples"
+  it("extracts multiple titles from note and stack params", () => {
+    const result = parseURLToTitles(
+      "?note=Getting%20Started&stack=API%20Reference%2CExamples"
     );
-    expect(result).toEqual(["getting-started", "api-reference", "examples"]);
+    expect(result).toEqual(["Getting Started", "API Reference", "Examples"]);
   });
 
-  it("handles empty pathname", () => {
-    const result = parseURLToSlugs("/", "");
+  it("handles empty search string", () => {
+    const result = parseURLToTitles("");
     expect(result).toEqual([]);
   });
 
-  it("handles pathname with no stack param", () => {
-    const result = parseURLToSlugs("/my-note", "?other=param");
-    expect(result).toEqual(["my-note"]);
+  it("handles search with no note param", () => {
+    const result = parseURLToTitles("?other=param");
+    expect(result).toEqual([]);
   });
 
   it("handles empty stack param", () => {
-    const result = parseURLToSlugs("/note", "?stack=");
-    expect(result).toEqual(["note"]);
+    const result = parseURLToTitles("?note=My%20Note&stack=");
+    expect(result).toEqual(["My Note"]);
   });
 
-  it("filters empty slugs from stack", () => {
-    const result = parseURLToSlugs("/note", "?stack=a,,b");
-    expect(result).toEqual(["note", "a", "b"]);
-  });
-});
-
-describe("buildURLFromSlugs", () => {
-  it("builds URL for single slug", () => {
-    const result = buildURLFromSlugs(["getting-started"]);
-    expect(result).toBe("/getting-started");
-  });
-
-  it("builds URL with stack param for multiple slugs", () => {
-    const result = buildURLFromSlugs([
-      "getting-started",
-      "api-reference",
-      "examples",
-    ]);
-    expect(result).toBe("/getting-started?stack=api-reference,examples");
-  });
-
-  it("returns root for empty slugs", () => {
-    const result = buildURLFromSlugs([]);
-    expect(result).toBe("/");
-  });
-
-  it("handles two slugs", () => {
-    const result = buildURLFromSlugs(["note-1", "note-2"]);
-    expect(result).toBe("/note-1?stack=note-2");
+  it("filters empty titles from stack", () => {
+    const result = parseURLToTitles("?note=Note&stack=a%2C%2Cb");
+    expect(result).toEqual(["Note", "a", "b"]);
   });
 });

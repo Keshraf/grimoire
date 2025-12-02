@@ -47,23 +47,24 @@ export function transformLinks(markdown: string): string {
   return markdown.replace(linkPattern, (_, rawTitle, display) => {
     const title = rawTitle.trim();
     const text = display ? display.trim() : title;
-    return `<a href="/${encodeURIComponent(title)}" data-internal="true" class="internal-link">${text}</a>`;
+    // Use button instead of anchor to completely avoid browser navigation behavior
+    return `<button type="button" data-internal="true" data-title="${title}" class="internal-link">${text}</button>`;
   });
 }
 
 /**
  * Render markdown to HTML with wiki-link transformation
- * Transforms [[links]] and converts to HTML using remark
+ * Converts to HTML using remark, then transforms [[links]]
  */
 export async function renderMarkdown(markdown: string): Promise<string> {
-  // First transform wiki-style links
-  const transformed = transformLinks(markdown);
-
-  // Then process with remark
+  // First process markdown to HTML
   const result = await remark()
     .use(remarkGfm)
     .use(remarkHtml, { sanitize: false })
-    .process(transformed);
+    .process(markdown);
 
-  return String(result);
+  // Then transform wiki-links in the HTML output
+  // This ensures data-internal attribute is preserved (not processed by remark)
+  const html = String(result);
+  return transformLinks(html);
 }

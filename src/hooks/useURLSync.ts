@@ -28,37 +28,16 @@ export function parseURLToTitles(search: string): string[] {
 }
 
 /**
- * Build URL from array of titles
- * Single pane: /?note=Title
- * Multiple panes: /?note=Title&stack=Title2,Title3
- */
-export function buildURLFromTitles(titles: string[]): string {
-  if (titles.length === 0) {
-    return "/";
-  }
-
-  const [firstTitle, ...rest] = titles;
-  const params = new URLSearchParams();
-  params.set("note", firstTitle);
-
-  if (rest.length > 0) {
-    params.set("stack", rest.map(t => encodeURIComponent(t)).join(","));
-  }
-
-  return `/?${params.toString()}`;
-}
-
-/**
- * Hook to sync navigation state with URL
- * - On mount: parse URL and restore state
- * - On state change: update URL without page reload
+ * Hook to restore navigation state from URL on initial page load.
+ *
+ * Note: This hook only parses the URL on mount. It does NOT sync state
+ * changes back to the URL. Navigation within the app is purely state-based.
  */
 export function useURLSync(): void {
-  const { state, dispatch } = useNavigation();
+  const { dispatch } = useNavigation();
   const isInitialized = useRef(false);
-  const prevTitlesRef = useRef<string[]>([]);
 
-  // Restore from URL on mount
+  // Restore from URL on mount (runs once)
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
@@ -71,25 +50,4 @@ export function useURLSync(): void {
       dispatch({ type: "RESTORE_FROM_URL", titles });
     }
   }, [dispatch]);
-
-  // Sync state changes to URL
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isInitialized.current) return;
-
-    const currentTitles = state.panes.map((p) => p.title);
-
-    // Skip if titles haven't changed
-    if (
-      currentTitles.length === prevTitlesRef.current.length &&
-      currentTitles.every((t, i) => t === prevTitlesRef.current[i])
-    ) {
-      return;
-    }
-
-    prevTitlesRef.current = currentTitles;
-
-    const newURL = buildURLFromTitles(currentTitles);
-    window.history.replaceState(null, "", newURL);
-  }, [state.panes]);
 }

@@ -53,15 +53,13 @@ const WikiLink = Node.create({
   parseHTML() {
     return [
       {
-        tag: 'a[data-internal="true"]',
+        tag: 'button[data-internal="true"]',
         getAttrs: (node) => {
-          const href = (node as HTMLElement).getAttribute("href");
-          const title = href?.startsWith("/")
-            ? decodeURIComponent(href.slice(1))
-            : href ? decodeURIComponent(href) : null;
+          const element = node as HTMLElement;
+          const title = element.getAttribute("data-title");
           return {
             title,
-            display: (node as HTMLElement).textContent,
+            display: element.textContent,
           };
         },
       },
@@ -70,10 +68,11 @@ const WikiLink = Node.create({
 
   renderHTML({ node }) {
     return [
-      "a",
+      "button",
       mergeAttributes({
-        href: `/${encodeURIComponent(node.attrs.title)}`,
+        type: "button",
         "data-internal": "true",
+        "data-title": node.attrs.title,
         class: "internal-link text-purple-400 hover:text-purple-300 cursor-pointer",
       }),
       node.attrs.display || node.attrs.title,
@@ -105,13 +104,13 @@ interface WysiwygEditorProps {
 
 // Convert markdown to HTML for TipTap
 function markdownToHtml(markdown: string): string {
-  // Transform wikilinks to anchor tags (use title directly, URL encode it)
+  // Transform wikilinks to button elements (not anchors - avoids all browser navigation)
   const withLinks = markdown.replace(
     /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
     (_, rawTitle, display) => {
       const title = rawTitle.trim();
       const text = display ? display.trim() : title;
-      return `<a href="/${encodeURIComponent(title)}" data-internal="true">${text}</a>`;
+      return `<button type="button" data-internal="true" data-title="${title}">${text}</button>`;
     }
   );
 
@@ -342,20 +341,22 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
           class: "prose prose-invert max-w-none focus:outline-none min-h-[200px] px-6 py-4",
           style: `color: ${config.theme.colors?.text || "#e8e6e3"}; font-family: ${config.theme.fonts?.body || "Inter, sans-serif"};`,
         },
-        handleClick: (_view, _pos, event) => {
-          const target = event.target as HTMLElement;
-          const anchor = target.closest('a[data-internal="true"]');
+        // Handle clicks on internal link buttons
+        handleDOMEvents: {
+          click: (view, event) => {
+            const target = event.target as HTMLElement;
+            const button = target.closest('button[data-internal="true"]');
 
-          if (anchor) {
-            event.preventDefault();
-            const href = anchor.getAttribute("href");
-            if (href) {
-              const title = decodeURIComponent(href.startsWith("/") ? href.slice(1) : href);
-              onLinkClick(title);
+            if (button) {
+              event.preventDefault();
+              const title = button.getAttribute("data-title");
+              if (title) {
+                onLinkClick(title);
+              }
+              return true;
             }
-            return true;
-          }
-          return false;
+            return false;
+          },
         },
       },
       onUpdate: ({ editor }) => {

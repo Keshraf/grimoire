@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useEffect, useRef } from "react";
 import type { NexusConfig } from "@/types";
 
 interface NoteViewerProps {
@@ -10,32 +10,43 @@ interface NoteViewerProps {
 }
 
 export function NoteViewer({ html, config, onLinkClick }: NoteViewerProps) {
-  const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest("a");
+  const containerRef = useRef<HTMLDivElement>(null);
 
-      if (anchor?.dataset.internal === "true") {
+  // Handle clicks on internal link buttons
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const button = target.closest('button[data-internal="true"]');
+
+      if (button) {
         e.preventDefault();
-        const href = anchor.getAttribute("href");
-        if (href) {
-          // Extract title from href (removes leading /)
-          const title = decodeURIComponent(href.startsWith("/") ? href.slice(1) : href);
+        e.stopPropagation();
+
+        const title = button.getAttribute("data-title");
+        if (title) {
           onLinkClick(title);
         }
       }
-    },
-    [onLinkClick]
-  );
+    };
+
+    container.addEventListener("click", handleClick);
+
+    return () => {
+      container.removeEventListener("click", handleClick);
+    };
+  }, [onLinkClick]);
 
   return (
     <div
+      ref={containerRef}
       className="prose prose-invert max-w-none px-6 py-4"
       style={{
         color: config.theme.colors?.text,
         fontFamily: config.theme.fonts?.body,
       }}
-      onClick={handleClick}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

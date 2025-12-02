@@ -3,8 +3,8 @@ import { navigationReducer } from "../useNavigation";
 import type { NavigationState, NavigationAction } from "@/types";
 
 // Helper to create a mock pane
-function mockPane(slug: string, id = crypto.randomUUID()) {
-  return { id, slug, mode: "view" as const, scrollTop: 0 };
+function mockPane(title: string, id = crypto.randomUUID()) {
+  return { id, title, mode: "view" as const, scrollTop: 0 };
 }
 
 describe("navigationReducer", () => {
@@ -15,21 +15,39 @@ describe("navigationReducer", () => {
   });
 
   describe("PUSH_PANE", () => {
-    it("adds a new pane after the specified index", () => {
+    it("adds a new pane after the specified index when note not already open", () => {
       const state: NavigationState = {
-        panes: [mockPane("note-1"), mockPane("note-2")],
+        panes: [mockPane("note-1")],
         activePaneIndex: 0,
       };
       const action: NavigationAction = {
         type: "PUSH_PANE",
-        slug: "note-3",
+        title: "note-2",
         afterIndex: 0,
       };
 
       const result = navigationReducer(state, action);
 
       expect(result.panes).toHaveLength(2);
-      expect(result.panes[1].slug).toBe("note-3");
+      expect(result.panes[1].title).toBe("note-2");
+      expect(result.activePaneIndex).toBe(1);
+    });
+
+    it("activates existing pane if note is already open (deduplication)", () => {
+      const state: NavigationState = {
+        panes: [mockPane("note-1"), mockPane("note-2"), mockPane("note-3")],
+        activePaneIndex: 0,
+      };
+      const action: NavigationAction = {
+        type: "PUSH_PANE",
+        title: "note-2",
+        afterIndex: 0,
+      };
+
+      const result = navigationReducer(state, action);
+
+      // Should not add duplicate, just activate existing
+      expect(result.panes).toHaveLength(3);
       expect(result.activePaneIndex).toBe(1);
     });
 
@@ -40,15 +58,15 @@ describe("navigationReducer", () => {
       };
       const action: NavigationAction = {
         type: "PUSH_PANE",
-        slug: "note-4",
+        title: "note-4",
         afterIndex: 0,
       };
 
       const result = navigationReducer(state, action);
 
       expect(result.panes).toHaveLength(2);
-      expect(result.panes[0].slug).toBe("note-1");
-      expect(result.panes[1].slug).toBe("note-4");
+      expect(result.panes[0].title).toBe("note-1");
+      expect(result.panes[1].title).toBe("note-4");
     });
 
     it("sets the new pane as active", () => {
@@ -58,7 +76,7 @@ describe("navigationReducer", () => {
       };
       const action: NavigationAction = {
         type: "PUSH_PANE",
-        slug: "note-2",
+        title: "note-2",
         afterIndex: 0,
       };
 
@@ -70,7 +88,7 @@ describe("navigationReducer", () => {
     it("initializes new pane in view mode", () => {
       const action: NavigationAction = {
         type: "PUSH_PANE",
-        slug: "note-1",
+        title: "note-1",
         afterIndex: -1,
       };
 
@@ -91,7 +109,7 @@ describe("navigationReducer", () => {
       const result = navigationReducer(state, action);
 
       expect(result.panes).toHaveLength(1);
-      expect(result.panes[0].slug).toBe("note-1");
+      expect(result.panes[0].title).toBe("note-1");
     });
 
     it("adjusts active index when active pane is removed", () => {
@@ -217,14 +235,14 @@ describe("navigationReducer", () => {
       };
       const action: NavigationAction = {
         type: "NAVIGATE_LINEAR",
-        slug: "note-prev",
+        title: "note-prev",
         afterIndex: 0,
       };
 
       const result = navigationReducer(state, action);
 
       expect(result.panes).toHaveLength(2);
-      expect(result.panes[1].slug).toBe("note-prev");
+      expect(result.panes[1].title).toBe("note-prev");
     });
 
     it("sets new pane as active", () => {
@@ -234,7 +252,7 @@ describe("navigationReducer", () => {
       };
       const action: NavigationAction = {
         type: "NAVIGATE_LINEAR",
-        slug: "note-next",
+        title: "note-next",
         afterIndex: 0,
       };
 
@@ -246,7 +264,7 @@ describe("navigationReducer", () => {
     it("initializes pane in view mode", () => {
       const action: NavigationAction = {
         type: "NAVIGATE_LINEAR",
-        slug: "note-1",
+        title: "note-1",
         afterIndex: -1,
       };
 
@@ -257,24 +275,24 @@ describe("navigationReducer", () => {
   });
 
   describe("RESTORE_FROM_URL", () => {
-    it("creates panes for each slug", () => {
+    it("creates panes for each title", () => {
       const action: NavigationAction = {
         type: "RESTORE_FROM_URL",
-        slugs: ["note-1", "note-2", "note-3"],
+        titles: ["note-1", "note-2", "note-3"],
       };
 
       const result = navigationReducer(initialState, action);
 
       expect(result.panes).toHaveLength(3);
-      expect(result.panes[0].slug).toBe("note-1");
-      expect(result.panes[1].slug).toBe("note-2");
-      expect(result.panes[2].slug).toBe("note-3");
+      expect(result.panes[0].title).toBe("note-1");
+      expect(result.panes[1].title).toBe("note-2");
+      expect(result.panes[2].title).toBe("note-3");
     });
 
     it("sets last pane as active", () => {
       const action: NavigationAction = {
         type: "RESTORE_FROM_URL",
-        slugs: ["note-1", "note-2"],
+        titles: ["note-1", "note-2"],
       };
 
       const result = navigationReducer(initialState, action);
@@ -285,7 +303,7 @@ describe("navigationReducer", () => {
     it("initializes all panes in view mode", () => {
       const action: NavigationAction = {
         type: "RESTORE_FROM_URL",
-        slugs: ["note-1", "note-2"],
+        titles: ["note-1", "note-2"],
       };
 
       const result = navigationReducer(initialState, action);
@@ -293,10 +311,10 @@ describe("navigationReducer", () => {
       expect(result.panes.every((p) => p.mode === "view")).toBe(true);
     });
 
-    it("handles empty slugs array", () => {
+    it("handles empty titles array", () => {
       const action: NavigationAction = {
         type: "RESTORE_FROM_URL",
-        slugs: [],
+        titles: [],
       };
 
       const result = navigationReducer(initialState, action);

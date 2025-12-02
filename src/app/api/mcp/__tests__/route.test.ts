@@ -2,39 +2,35 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET, POST } from "../route";
 import { NextRequest } from "next/server";
 
-// Mock dependencies
-vi.mock("@/lib/supabase", () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        order: vi.fn(() => ({
-          data: [
-            { slug: "note-1", title: "Note 1" },
-            { slug: "note-2", title: "Note 2" },
-          ],
+// Mock the server supabase client
+const mockSupabaseClient = {
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      order: vi.fn(() => ({
+        data: [{ title: "Note 1" }, { title: "Note 2" }],
+        error: null,
+      })),
+      eq: vi.fn(() => ({
+        single: vi.fn(() => ({
+          data: {
+            title: "Note 1",
+            content: "Content with [[Note 2]] link",
+          },
           error: null,
         })),
-        eq: vi.fn(() => ({
-          single: vi.fn(() => ({
-            data: {
-              slug: "note-1",
-              title: "Note 1",
-              content: "Content with [[note-2]] link",
-            },
-            error: null,
-          })),
-        })),
-        or: vi.fn(() => ({
-          limit: vi.fn(() => ({
-            data: [
-              { slug: "note-1", title: "Note 1", content: "Test content" },
-            ],
-            error: null,
-          })),
+      })),
+      or: vi.fn(() => ({
+        limit: vi.fn(() => ({
+          data: [{ title: "Note 1", content: "Test content" }],
+          error: null,
         })),
       })),
     })),
-  },
+  })),
+};
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
 }));
 
 vi.mock("@/lib/config", () => ({

@@ -33,7 +33,10 @@
         "@modelcontextprotocol/server-filesystem",
         "/Users/ketansaraf/Code/Hackathons/grimoire"
       ],
-      "disabled": false
+      "disabled": false,
+      "autoApprove": [
+        "read_text_file"
+      ]
     },
     "tailwindcss": {
       "command": "npx",
