@@ -152,3 +152,11 @@ nav {
 .tiptap.prose-slate ::selection {
   background: rgba(9, 105, 218, 0.2);
 }
+
+/* Language-specific code blocks */
+.language-http,
+code.language-http,
+pre code.language-http,
+[class*="language-"] {
+  color: #1f2328 !important;
+}
