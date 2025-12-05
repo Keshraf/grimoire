@@ -6,7 +6,7 @@ import { parseWikilinks } from "@nexus/core/lib/links";
 import { getLocalGraph } from "@nexus/core/lib/graph";
 import type { Note } from "@nexus/core/types";
 
-// Extend timeout for SSE (requires Vercel Pro for 60s, hobby is 10s)
+// Extend timeout (requires Vercel Pro for 60s, hobby is 10s)
 export const maxDuration = 60;
 
 // CORS headers
@@ -121,17 +121,12 @@ async function handleSearch(query: string) {
   const results = (notes || []).map((note) => {
     const content = note.content || "";
     const idx = content.toLowerCase().indexOf(searchQuery.toLowerCase());
-    let excerpt = "";
-    if (idx >= 0) {
-      const start = Math.max(0, idx - 50);
-      const end = Math.min(content.length, idx + searchQuery.length + 100);
-      excerpt =
-        (start > 0 ? "..." : "") +
-        content.slice(start, end) +
-        (end < content.length ? "..." : "");
-    } else {
-      excerpt = content.slice(0, 150) + (content.length > 150 ? "..." : "");
-    }
+    let excerpt =
+      idx >= 0
+        ? (idx > 50 ? "..." : "") +
+          content.slice(Math.max(0, idx - 50), idx + searchQuery.length + 100) +
+          "..."
+        : content.slice(0, 150) + (content.length > 150 ? "..." : "");
     return { title: note.title, excerpt };
   });
   return { results };
@@ -149,7 +144,6 @@ async function handleAsk(question: string) {
       : process.env.OPENAI_API_KEY;
   if (!aiEnabled || !apiKey)
     return { answer: "AI search is not available", sources: [] };
-
   const supabase = await createClient();
   const keywords = question
     .toLowerCase()
@@ -248,17 +242,15 @@ interface JsonRpcResponse {
   jsonrpc: "2.0";
   id: string | number | null;
   result?: unknown;
-  error?: { code: number; message: string; data?: unknown };
+  error?: { code: number; message: string };
 }
 
-// Handle JSON-RPC message
+// Handle JSON-RPC message and return response
 async function handleJsonRpc(
   msg: JsonRpcRequest
 ): Promise<JsonRpcResponse | null> {
   const { id, method, params } = msg;
-
-  // Notifications (no id) don't need responses
-  if (id === undefined) return null;
+  if (id === undefined) return null; // Notifications don't need responses
 
   try {
     switch (method) {
@@ -272,10 +264,8 @@ async function handleJsonRpc(
             serverInfo: { name: "codex-mcp", version: "1.0.0" },
           },
         };
-
       case "tools/list":
         return { jsonrpc: "2.0", id, result: { tools } };
-
       case "tools/call": {
         const { name, arguments: args } = params as {
           name: string;
@@ -290,13 +280,8 @@ async function handleJsonRpc(
           },
         };
       }
-
       case "ping":
         return { jsonrpc: "2.0", id, result: {} };
-
-      case "notifications/initialized":
-        return null; // No response needed
-
       default:
         return {
           jsonrpc: "2.0",
@@ -305,45 +290,46 @@ async function handleJsonRpc(
         };
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return { jsonrpc: "2.0", id, error: { code: -32000, message } };
+    return {
+      jsonrpc: "2.0",
+      id,
+      error: {
+        code: -32000,
+        message: err instanceof Error ? err.message : "Unknown error",
+      },
+    };
   }
 }
 
-// In-memory session store for SSE connections
-const sessions = new Map<
-  string,
-  {
-    controller: ReadableStreamDefaultController<Uint8Array> | null;
-    encoder: TextEncoder;
-  }
->();
-
-// GET /api/mcp/sse - SSE endpoint (mcp-remote connects here)
+// GET /api/mcp/sse - SSE endpoint that handles the full MCP session inline
 export async function GET(request: NextRequest) {
-  const sessionId = crypto.randomUUID();
   const encoder = new TextEncoder();
+  const url = new URL(request.url);
 
+  // Create SSE stream
   const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      // Store session
-      sessions.set(sessionId, { controller, encoder });
-
-      // Send the endpoint URL for POST messages
-      const origin = new URL(request.url).origin;
-      const endpointUrl = `${origin}/api/mcp/sse?sessionId=${sessionId}`;
+    async start(controller) {
+      // Send endpoint event pointing to POST handler
+      const endpointUrl = `${url.origin}/api/mcp/sse`;
       controller.enqueue(
         encoder.encode(`event: endpoint\ndata: ${endpointUrl}\n\n`)
       );
-    },
-    cancel() {
-      sessions.delete(sessionId);
-    },
-  });
 
-  // Clean up on abort
-  request.signal.addEventListener("abort", () => {
-    sessions.delete(sessionId);
+      // Keep connection alive with periodic pings
+      const keepAlive = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(`: keepalive\n\n`));
+        } catch {
+          clearInterval(keepAlive);
+        }
+      }, 15000);
+
+      // Clean up on abort
+      request.signal.addEventListener("abort", () => {
+        clearInterval(keepAlive);
+        controller.close();
+      });
+    },
   });
 
   return new Response(stream, {
@@ -356,49 +342,35 @@ export async function GET(request: NextRequest) {
   });
 }
 
-// POST /api/mcp/sse - Receive JSON-RPC messages from mcp-remote
+// POST /api/mcp/sse - Handle JSON-RPC messages and return response directly
 export async function POST(request: NextRequest) {
-  const sessionId = request.nextUrl.searchParams.get("sessionId");
-
-  if (!sessionId) {
-    return new Response(JSON.stringify({ error: "Missing sessionId" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  }
-
-  const session = sessions.get(sessionId);
-  if (!session || !session.controller) {
-    return new Response(
-      JSON.stringify({ error: "Session not found or closed" }),
-      {
-        status: 404,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
-  }
-
   try {
     const message: JsonRpcRequest = await request.json();
     const response = await handleJsonRpc(message);
 
-    if (response) {
-      // Send response via SSE
-      const data = JSON.stringify(response);
-      session.controller.enqueue(
-        session.encoder.encode(`event: message\ndata: ${data}\n\n`)
-      );
+    if (!response) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    // Return JSON-RPC response directly (not via SSE)
+    return new Response(JSON.stringify(response), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (err) {
-    console.error("MCP SSE error:", err);
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    console.error("MCP error:", err);
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32700, message: "Parse error" },
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 }
 
