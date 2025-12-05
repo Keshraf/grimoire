@@ -49,6 +49,7 @@ export const DEFAULT_CONFIG: NexusConfig = {
     ai_search: false,
     import_export: true,
     mcp_server: true,
+    inline_editing: false,
   },
   auth: {
     mode: "none",

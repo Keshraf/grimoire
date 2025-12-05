@@ -99,11 +99,21 @@ async function seed(exampleName: string): Promise<SeedResult> {
   // Insert notes
   console.log("📥 Inserting notes...");
   for (const note of notes) {
-    const { error } = await supabase.from("notes").insert({
+    const insertData: Record<string, unknown> = {
       title: note.title,
       content: note.content,
       tags: note.tags,
-    });
+    };
+
+    // Add optional fields for documentation mode
+    if (note.section) {
+      insertData.section = note.section;
+    }
+    if (note.order !== undefined) {
+      insertData.order = note.order;
+    }
+
+    const { error } = await supabase.from("notes").insert(insertData);
 
     if (error) {
       result.errors.push(
@@ -141,45 +151,172 @@ async function seed(exampleName: string): Promise<SeedResult> {
   return result;
 }
 
-// Parse notes from SQL INSERT statements (title, content, tags format)
-function parseNotesFromSQL(
-  sql: string
-): Array<{ title: string; content: string; tags: string[] }> {
+// Parse notes from SQL INSERT statements
+// Supports both formats:
+// - (title, content, tags) - personal mode
+// - (title, content, tags, section, "order") - documentation mode
+function parseNotesFromSQL(sql: string): Array<{
+  title: string;
+  content: string;
+  tags: string[];
+  section?: string;
+  order?: number;
+}> {
   const notes: Array<{
     title: string;
     content: string;
     tags: string[];
+    section?: string;
+    order?: number;
   }> = [];
 
-  // Find the INSERT INTO notes statement
-  const notesRegex =
-    /INSERT INTO notes \(title, content, tags\) VALUES\s*([\s\S]*?);(?=\s*--|\s*INSERT|\s*$)/;
-  const match = notesRegex.exec(sql);
+  // Find all INSERT INTO notes VALUES blocks
+  const insertBlocks = sql.split(/INSERT INTO notes\s*\([^)]+\)\s*VALUES/i);
 
-  if (!match) {
-    console.warn("No notes INSERT statement found in SQL");
-    return notes;
+  for (let blockIdx = 1; blockIdx < insertBlocks.length; blockIdx++) {
+    const block = insertBlocks[blockIdx];
+
+    // Find where this VALUES block ends (at the semicolon before next statement)
+    const endMatch = block.match(/;[\s]*(?:--|INSERT|$)/);
+    const valuesSection = endMatch ? block.slice(0, endMatch.index) : block;
+
+    // Parse individual entries from this VALUES section
+    const entries = extractSqlEntries(valuesSection);
+
+    for (const entry of entries) {
+      const parsed = parseEntry(entry);
+      if (parsed) {
+        notes.push(parsed);
+      }
+    }
   }
 
-  const valuesSection = match[1];
-
-  // Parse each note entry: ('Title', 'Content...', ARRAY['tag1', 'tag2'])
-  const entryRegex = /\(\s*'([^']+)',\s*'([\s\S]*?)',\s*ARRAY\[(.*?)\]\s*\)/g;
-
-  let entryMatch;
-  while ((entryMatch = entryRegex.exec(valuesSection)) !== null) {
-    const title = entryMatch[1];
-    const content = entryMatch[2].replace(/''/g, "'"); // Unescape SQL quotes
-    const tagsStr = entryMatch[3];
-    const tags = tagsStr
-      .split(",")
-      .map((t) => t.trim().replace(/'/g, ""))
-      .filter((t) => t);
-
-    notes.push({ title, content, tags });
+  if (notes.length === 0) {
+    console.warn("No notes INSERT statement found in SQL");
   }
 
   return notes;
+}
+
+// Extract individual SQL value entries from a VALUES section
+function extractSqlEntries(valuesSection: string): string[] {
+  const entries: string[] = [];
+  let i = 0;
+
+  while (i < valuesSection.length) {
+    // Find start of entry
+    const openParen = valuesSection.indexOf("(", i);
+    if (openParen === -1) break;
+
+    // Find matching close paren, accounting for nested parens and strings
+    let depth = 1;
+    let j = openParen + 1;
+    let inString = false;
+
+    while (j < valuesSection.length && depth > 0) {
+      const char = valuesSection[j];
+
+      if (char === "'" && !inString) {
+        inString = true;
+        j++;
+        continue;
+      }
+
+      if (char === "'" && inString) {
+        // Check for escaped quote ''
+        if (valuesSection[j + 1] === "'") {
+          j += 2; // Skip both quotes
+          continue;
+        }
+        inString = false;
+        j++;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === "(") depth++;
+        if (char === ")") depth--;
+      }
+
+      j++;
+    }
+
+    if (depth === 0) {
+      entries.push(valuesSection.slice(openParen, j));
+    }
+
+    i = j;
+  }
+
+  return entries;
+}
+
+// Parse a single SQL entry like ('title', 'content', ARRAY['tag'], 'section', 1)
+function parseEntry(entry: string): {
+  title: string;
+  content: string;
+  tags: string[];
+  section?: string;
+  order?: number;
+} | null {
+  // Remove outer parentheses
+  entry = entry.trim();
+  if (entry.startsWith("(")) entry = entry.slice(1);
+  if (entry.endsWith(")")) entry = entry.slice(0, -1);
+
+  // Extract SQL string values using a state machine
+  const stringValues: string[] = [];
+  let i = 0;
+
+  while (i < entry.length) {
+    // Skip to next single quote (start of string)
+    while (i < entry.length && entry[i] !== "'") i++;
+    if (i >= entry.length) break;
+
+    // Start of string
+    i++; // Skip opening quote
+    let value = "";
+
+    while (i < entry.length) {
+      if (entry[i] === "'") {
+        // Check for escaped quote
+        if (entry[i + 1] === "'") {
+          value += "'";
+          i += 2;
+          continue;
+        }
+        // End of string
+        i++; // Skip closing quote
+        break;
+      }
+      value += entry[i];
+      i++;
+    }
+
+    stringValues.push(value);
+  }
+
+  // Extract ARRAY values
+  const arrayMatch = entry.match(/ARRAY\[(.*?)\]/);
+  const tagsStr = arrayMatch ? arrayMatch[1] : "";
+  const tags = tagsStr
+    .split(",")
+    .map((t) => t.trim().replace(/'/g, ""))
+    .filter((t) => t);
+
+  // Extract order number (last number in entry)
+  const orderMatch = entry.match(/,\s*(\d+)\s*$/);
+  const order = orderMatch ? parseInt(orderMatch[1], 10) : undefined;
+
+  if (stringValues.length < 2) {
+    return null;
+  }
+
+  const title = stringValues[0];
+  const content = stringValues[1];
+  const section = stringValues.length >= 4 ? stringValues[3] : undefined;
+
+  return { title, content, tags, section, order };
 }
 
 // Main execution

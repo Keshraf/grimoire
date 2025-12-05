@@ -2,7 +2,7 @@
 // Title is the primary identifier (unique)
 export interface Note {
   id: string;
-  title: string;  // Primary identifier, must be unique
+  title: string; // Primary identifier, must be unique
   content: string;
   tags: string[];
   section?: string;
@@ -46,7 +46,7 @@ export interface GraphData {
 // Multi-pane navigation types
 export interface Pane {
   id: string;
-  title: string;  // Note title (primary identifier)
+  title: string; // Note title (primary identifier)
   mode: "view" | "edit";
   scrollTop: number;
 }
@@ -133,6 +133,7 @@ export interface NexusConfig {
     ai_search: boolean;
     import_export: boolean;
     mcp_server: boolean;
+    inline_editing?: boolean;
   };
   navigation?: {
     sections?: Array<{
@@ -160,7 +161,7 @@ export interface NexusConfig {
 
 // Search types
 export interface SearchResult {
-  title: string;  // Primary identifier
+  title: string; // Primary identifier
   excerpt: string;
   score: number;
 }
@@ -247,8 +248,8 @@ export interface ListPagesResult {
 export interface GetPageResult {
   title: string;
   content: string;
-  outlinks: string[];  // Array of titles
-  backlinks: string[];  // Array of titles
+  outlinks: string[]; // Array of titles
+  backlinks: string[]; // Array of titles
 }
 
 export interface SearchToolResult {
@@ -262,8 +263,8 @@ export interface AskToolResult {
 
 export interface GetConnectionsResult {
   title: string;
-  outlinks: string[];  // Array of titles
-  backlinks: string[];  // Array of titles
+  outlinks: string[]; // Array of titles
+  backlinks: string[]; // Array of titles
   localGraph: {
     nodes: Array<{ id: string; title: string; connections: number }>;
     edges: Array<{ source: string; target: string }>;

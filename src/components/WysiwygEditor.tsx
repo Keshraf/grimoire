@@ -4,6 +4,11 @@ import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { Markdown } from "tiptap-markdown";
 import { Node, mergeAttributes } from "@tiptap/core";
 import {
   useState,
@@ -16,23 +21,38 @@ import {
 import type { Note } from "@/types";
 import { LinkAutocomplete } from "./LinkAutocomplete";
 
-// Flexible theme config that works with full NexusConfig or minimal config
+/**
+ * Theme configuration for the WYSIWYG editor.
+ * Supports both full NexusConfig and minimal configuration objects.
+ */
 interface EditorConfig {
+  /** Theme settings for colors and fonts */
   theme: {
+    /** Color palette for the editor */
     colors?: {
+      /** Text color (default: #e8e6e3) */
       text?: string;
+      /** Background color */
       background?: string;
+      /** Primary accent color */
       primary?: string;
+      /** Secondary accent color */
       accent?: string;
     };
+    /** Font family settings */
     fonts?: {
+      /** Body text font (default: Inter, sans-serif) */
       body?: string;
+      /** Heading font */
       heading?: string;
     };
   };
 }
 
-// Custom WikiLink node for rendering [[links]]
+/**
+ * Custom TipTap node for rendering wikilinks in `[[Title]]` or `[[Title|Display]]` format.
+ * Renders as clickable buttons to avoid browser navigation behavior.
+ */
 const WikiLink = Node.create({
   name: "wikiLink",
   group: "inline",
@@ -73,236 +93,131 @@ const WikiLink = Node.create({
         type: "button",
         "data-internal": "true",
         "data-title": node.attrs.title,
-        class: "internal-link text-purple-400 hover:text-purple-300 cursor-pointer",
+        class:
+          "internal-link text-purple-400 hover:text-purple-300 cursor-pointer",
       }),
       node.attrs.display || node.attrs.title,
     ];
   },
 });
 
+/**
+ * Internal state for the wikilink autocomplete popup.
+ */
 interface AutocompleteState {
+  /** Whether the autocomplete dropdown is visible */
   isOpen: boolean;
+  /** Current search query (text after `[[`) */
   query: string;
+  /** Absolute position for the popup */
   position: { top: number; left: number };
+  /** Text range to replace when a link is selected */
   range: { from: number; to: number } | null;
 }
 
+/**
+ * Ref handle exposed by WysiwygEditor for imperative operations.
+ */
 export interface WysiwygEditorRef {
+  /** Returns the current editor content as markdown */
   getMarkdown: () => string;
+  /** Sets the editor content from a markdown string */
   setContent: (markdown: string) => void;
 }
 
+/**
+ * Props for the WysiwygEditor component.
+ */
 interface WysiwygEditorProps {
+  /** Initial markdown content to display in the editor */
   content: string;
+  /** Theme configuration for styling the editor */
   config: EditorConfig;
+  /** List of existing notes for wikilink autocomplete suggestions */
   notes: Note[];
+  /** Callback fired when content changes (debounced 1s for auto-save) */
   onSave: (content: string) => void;
+  /** Callback fired when a wikilink is clicked */
   onLinkClick: (title: string) => void;
+  /** Optional callback to create a new note from autocomplete */
   onCreateNote?: (title: string) => void;
+  /** Whether to focus the editor on mount (default: false) */
   autoFocus?: boolean;
 }
 
-// Convert markdown to HTML for TipTap
-function markdownToHtml(markdown: string): string {
-  // Transform wikilinks to button elements (not anchors - avoids all browser navigation)
-  const withLinks = markdown.replace(
+/**
+ * Pre-processes markdown content for the TipTap editor.
+ * Converts wikilinks [[title]] to HTML button elements that TipTap can parse.
+ * The tiptap-markdown extension handles all other markdown conversion.
+ *
+ * @param markdown - Raw markdown string with wikilinks
+ * @returns Markdown with wikilinks converted to HTML buttons
+ */
+function processWikilinksForEditor(markdown: string): string {
+  // Convert wikilinks to button elements that the WikiLink node can parse
+  return markdown.replace(
     /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
     (_, rawTitle, display) => {
       const title = rawTitle.trim();
-      const text = display ? display.trim() : title;
-      return `<button type="button" data-internal="true" data-title="${title}">${text}</button>`;
+      const displayText = display ? display.trim() : title;
+      return `<button type="button" data-internal="true" data-title="${title}">${displayText}</button>`;
     }
   );
-
-  // Basic markdown to HTML conversions
-  let html = withLinks
-    // Headers
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    // Bold and Italic
-    .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/___(.+?)___/g, "<strong><em>$1</em></strong>")
-    .replace(/__(.+?)__/g, "<strong>$1</strong>")
-    .replace(/_(.+?)_/g, "<em>$1</em>")
-    // Strikethrough
-    .replace(/~~(.+?)~~/g, "<s>$1</s>")
-    // Inline code
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    // Horizontal rules
-    .replace(/^---$/gm, "<hr>")
-    .replace(/^\*\*\*$/gm, "<hr>")
-    // Blockquotes
-    .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
-    // Unordered lists
-    .replace(/^- (.+)$/gm, "<li>$1</li>")
-    .replace(/^\* (.+)$/gm, "<li>$1</li>")
-    // Ordered lists
-    .replace(/^\d+\. (.+)$/gm, "<li>$1</li>")
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    // Paragraphs - wrap remaining lines
-    .split("\n")
-    .map((line) => {
-      if (
-        line.startsWith("<h") ||
-        line.startsWith("<li") ||
-        line.startsWith("<blockquote") ||
-        line.startsWith("<hr") ||
-        line.trim() === ""
-      ) {
-        return line;
-      }
-      return `<p>${line}</p>`;
-    })
-    .join("\n");
-
-  // Wrap consecutive <li> elements in <ul>
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
-
-  return html;
 }
 
-// Convert TipTap HTML back to markdown
-function htmlToMarkdown(editor: Editor): string {
-  const json = editor.getJSON();
-  return jsonToMarkdown(json);
-}
-
-function jsonToMarkdown(doc: Record<string, unknown>): string {
-  if (!doc.content) return "";
-
-  const content = doc.content as Array<Record<string, unknown>>;
-  const lines: string[] = [];
-
-  for (const node of content) {
-    lines.push(nodeToMarkdown(node));
-  }
-
-  return lines.join("\n\n");
-}
-
-function nodeToMarkdown(node: Record<string, unknown>): string {
-  const type = node.type as string;
-  const content = node.content as Array<Record<string, unknown>> | undefined;
-  const attrs = node.attrs as Record<string, unknown> | undefined;
-
-  switch (type) {
-    case "paragraph":
-      return content ? inlineToMarkdown(content) : "";
-
-    case "heading": {
-      const level = (attrs?.level as number) || 1;
-      const prefix = "#".repeat(level);
-      const text = content ? inlineToMarkdown(content) : "";
-      return `${prefix} ${text}`;
-    }
-
-    case "bulletList": {
-      const items = content || [];
-      return items.map((item) => nodeToMarkdown(item)).join("\n");
-    }
-
-    case "orderedList": {
-      const items = content || [];
-      return items
-        .map((item, i) => {
-          const itemContent = (item.content as Array<Record<string, unknown>>)?.[0];
-          const text = itemContent?.content ? inlineToMarkdown(itemContent.content as Array<Record<string, unknown>>) : "";
-          return `${i + 1}. ${text}`;
-        })
-        .join("\n");
-    }
-
-    case "listItem": {
-      const itemContent = content?.[0];
-      const text = itemContent?.content ? inlineToMarkdown(itemContent.content as Array<Record<string, unknown>>) : "";
-      return `- ${text}`;
-    }
-
-    case "blockquote": {
-      const quoteContent = content?.[0];
-      const text = quoteContent?.content ? inlineToMarkdown(quoteContent.content as Array<Record<string, unknown>>) : "";
-      return `> ${text}`;
-    }
-
-    case "codeBlock": {
-      const code = content?.[0]?.text || "";
-      const lang = (attrs?.language as string) || "";
-      return `\`\`\`${lang}\n${code}\n\`\`\``;
-    }
-
-    case "horizontalRule":
-      return "---";
-
-    default:
-      return content ? inlineToMarkdown(content) : "";
-  }
-}
-
-function inlineToMarkdown(nodes: Array<Record<string, unknown>>): string {
-  return nodes
-    .map((node) => {
-      const type = node.type as string;
-      const text = node.text as string | undefined;
-      const marks = node.marks as Array<{ type: string }> | undefined;
-      const attrs = node.attrs as Record<string, unknown> | undefined;
-
-      if (type === "wikiLink") {
-        const title = attrs?.title as string;
-        const display = attrs?.display as string;
-        if (display && display !== title) {
-          return `[[${title}|${display}]]`;
-        }
-        return `[[${title}]]`;
-      }
-
-      if (type === "text" && text) {
-        let result = text;
-
-        if (marks) {
-          for (const mark of marks) {
-            switch (mark.type) {
-              case "bold":
-                result = `**${result}**`;
-                break;
-              case "italic":
-                result = `*${result}*`;
-                break;
-              case "strike":
-                result = `~~${result}~~`;
-                break;
-              case "code":
-                result = `\`${result}\``;
-                break;
-              case "link": {
-                const href = (mark as unknown as { attrs: { href: string } }).attrs?.href;
-                if (href) {
-                  result = `[${result}](${href})`;
-                }
-                break;
-              }
-            }
-          }
-        }
-
-        return result;
-      }
-
-      if (type === "hardBreak") {
-        return "\n";
-      }
-
-      return "";
-    })
-    .join("");
-}
-
+/**
+ * A rich-text WYSIWYG editor built on TipTap with wikilink support.
+ *
+ * Provides markdown editing with real-time preview, auto-save functionality,
+ * and `[[wikilink]]` autocomplete for linking between notes. Supports tables,
+ * code blocks, headers, lists, and inline formatting.
+ *
+ * @remarks
+ * - Content is auto-saved 1 second after the last edit
+ * - Wikilinks are rendered as clickable buttons to prevent browser navigation
+ * - Typing `[[` triggers the autocomplete popup for linking to existing notes
+ * - Use the ref to imperatively get/set markdown content
+ *
+ * @param props - Component props
+ * @param props.content - Initial markdown content
+ * @param props.config - Theme configuration for colors and fonts
+ * @param props.notes - Available notes for autocomplete suggestions
+ * @param props.onSave - Callback when content changes (debounced)
+ * @param props.onLinkClick - Callback when a wikilink is clicked
+ * @param props.onCreateNote - Optional callback to create new notes from autocomplete
+ * @param props.autoFocus - Focus editor on mount (default: false)
+ * @param ref - Ref exposing getMarkdown() and setContent() methods
+ *
+ * @example
+ * ```tsx
+ * const editorRef = useRef<WysiwygEditorRef>(null);
+ *
+ * <WysiwygEditor
+ *   ref={editorRef}
+ *   content="# Hello\n\nLink to [[Other Note]]"
+ *   config={{ theme: { colors: { text: '#fff' } } }}
+ *   notes={allNotes}
+ *   onSave={(markdown) => saveNote(markdown)}
+ *   onLinkClick={(title) => openNote(title)}
+ *   onCreateNote={(title) => createNewNote(title)}
+ *   autoFocus
+ * />
+ *
+ * // Get current content
+ * const markdown = editorRef.current?.getMarkdown();
+ * ```
+ */
 export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
   function WysiwygEditor(
-    { content, config, notes, onSave, onLinkClick, onCreateNote, autoFocus = false },
+    {
+      content,
+      config,
+      notes,
+      onSave,
+      onLinkClick,
+      onCreateNote,
+      autoFocus = false,
+    },
     ref
   ) {
     const [autocomplete, setAutocomplete] = useState<AutocompleteState>({
@@ -323,6 +238,11 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
           heading: {
             levels: [1, 2, 3],
           },
+          codeBlock: {
+            HTMLAttributes: {
+              class: "bg-gray-800 rounded-lg p-4 my-4 overflow-x-auto",
+            },
+          },
         }),
         Link.configure({
           openOnClick: false,
@@ -333,17 +253,45 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
         Placeholder.configure({
           placeholder: "Write your note...",
         }),
+        Table.configure({
+          resizable: false,
+          HTMLAttributes: {
+            class: "border-collapse w-full my-4",
+          },
+        }),
+        TableRow,
+        TableHeader.configure({
+          HTMLAttributes: {
+            class:
+              "border border-gray-600 bg-gray-700 px-3 py-2 text-left font-semibold",
+          },
+        }),
+        TableCell.configure({
+          HTMLAttributes: {
+            class: "border border-gray-600 px-3 py-2",
+          },
+        }),
+        Markdown.configure({
+          html: true,
+          tightLists: true,
+          bulletListMarker: "-",
+          transformPastedText: true,
+          transformCopiedText: true,
+        }),
         WikiLink,
       ],
-      content: markdownToHtml(content),
+      content: processWikilinksForEditor(content),
       editorProps: {
         attributes: {
-          class: "prose prose-invert max-w-none focus:outline-none min-h-[200px] px-6 py-4",
-          style: `color: ${config.theme.colors?.text || "#e8e6e3"}; font-family: ${config.theme.fonts?.body || "Inter, sans-serif"};`,
+          class:
+            "prose prose-invert max-w-none focus:outline-none min-h-[200px] px-6 py-4",
+          style: `color: ${
+            config.theme.colors?.text || "#e8e6e3"
+          }; font-family: ${config.theme.fonts?.body || "Inter, sans-serif"};`,
         },
         // Handle clicks on internal link buttons
         handleDOMEvents: {
-          click: (view, event) => {
+          click: (_view, event) => {
             const target = event.target as HTMLElement;
             const button = target.closest('button[data-internal="true"]');
 
@@ -363,8 +311,9 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
         // Check for [[ trigger
         detectWikiLinkTrigger(editor);
 
-        // Schedule auto-save
-        const markdown = htmlToMarkdown(editor);
+        // Schedule auto-save - use the Markdown extension's getMarkdown()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const markdown = (editor.storage as any).markdown?.getMarkdown() || "";
         if (markdown !== lastSavedContentRef.current) {
           if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
@@ -379,10 +328,14 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
-      getMarkdown: () => (editor ? htmlToMarkdown(editor) : content),
+      getMarkdown: () =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        editor
+          ? (editor.storage as any).markdown?.getMarkdown() || ""
+          : content,
       setContent: (markdown: string) => {
         if (editor) {
-          editor.commands.setContent(markdownToHtml(markdown));
+          editor.commands.setContent(processWikilinksForEditor(markdown));
           lastSavedContentRef.current = markdown;
         }
       },
@@ -391,9 +344,11 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
     // Update editor content when prop changes
     useEffect(() => {
       if (editor && content !== lastSavedContentRef.current) {
-        const currentMarkdown = htmlToMarkdown(editor);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currentMarkdown =
+          (editor.storage as any).markdown?.getMarkdown() || "";
         if (currentMarkdown !== content) {
-          editor.commands.setContent(markdownToHtml(content));
+          editor.commands.setContent(processWikilinksForEditor(content));
           lastSavedContentRef.current = content;
         }
       }
@@ -424,7 +379,10 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
         const { $from } = selection;
 
         // Get text before cursor on current line
-        const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+        const textBefore = $from.parent.textContent.slice(
+          0,
+          $from.parentOffset
+        );
         const match = textBefore.match(/\[\[([^\]|\[]*)$/);
 
         if (match) {
@@ -433,7 +391,6 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
 
           // Get cursor position for popup
           const coords = ed.view.coordsAtPos($from.pos);
-          const containerRect = containerRef.current?.getBoundingClientRect();
 
           setAutocomplete({
             isOpen: true,
@@ -505,10 +462,7 @@ export const WysiwygEditor = forwardRef<WysiwygEditorRef, WysiwygEditorProps>(
 
     return (
       <div ref={containerRef} className="relative h-full">
-        <EditorContent
-          editor={editor}
-          className="h-full"
-        />
+        <EditorContent editor={editor} className="h-full" />
 
         {autocomplete.isOpen && (
           <LinkAutocomplete

@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import type { Note, NoteWithLinks, NexusConfig } from "@/types";
 import { PaneHeader } from "./PaneHeader";
 import { InlineNoteEditor } from "./InlineNoteEditor";
+import { NoteViewer } from "./NoteViewer";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { LinearNav } from "./LinearNav";
 import { FloatingGraph } from "./FloatingGraph";
@@ -118,7 +119,7 @@ export function Pane({
 
   return (
     <article
-      className={`relative flex flex-col h-screen ${
+      className={`relative flex flex-col h-full ${
         isActive && !collapsed ? "ring-2 ring-inset" : ""
       } ${collapsed ? "cursor-pointer hover:bg-white/5" : ""}`}
       style={{
@@ -161,7 +162,7 @@ export function Pane({
 
       {/* Main content - hidden when collapsed but still in DOM */}
       <div
-        className={`flex-1 flex flex-col transition-opacity duration-300 ${
+        className={`flex-1 flex flex-col min-h-0 transition-opacity duration-300 ${
           collapsed ? "opacity-0 invisible" : "opacity-100 visible"
         }`}
       >
@@ -176,17 +177,25 @@ export function Pane({
         />
 
         {/* Scrollable content area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full">
-            <InlineNoteEditor
-              content={note.content}
-              html={note.html}
-              config={config}
-              notes={allNotes}
-              onSave={onSave}
-              onLinkClick={onLinkClick}
-              onCreateNote={onCreateNote}
-            />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div>
+            {config.features.inline_editing ? (
+              <InlineNoteEditor
+                content={note.content}
+                html={note.html}
+                config={config}
+                notes={allNotes}
+                onSave={onSave}
+                onLinkClick={onLinkClick}
+                onCreateNote={onCreateNote}
+              />
+            ) : (
+              <NoteViewer
+                html={note.html}
+                config={config}
+                onLinkClick={onLinkClick}
+              />
+            )}
 
             {/* Backlinks at bottom of content */}
             {showBacklinks && note.backlinks.length > 0 && (

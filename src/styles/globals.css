@@ -106,10 +106,16 @@
 }
 
 .tiptap pre code {
-  background: none;
-  padding: 0;
+  background: none !important;
+  padding: 0 !important;
   font-family: var(--font-code);
   font-size: 0.875rem;
+  color: inherit !important;
+}
+
+/* Remove any syntax highlighting colors */
+.tiptap pre code * {
+  color: inherit !important;
 }
 
 /* Inline code */
@@ -193,4 +199,68 @@
 
 .tiptap a:not(.internal-link):hover {
   text-decoration: none;
+}
+
+/* Tables */
+.tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.tiptap th,
+.tiptap td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.tiptap th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+}
+
+.tiptap tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Light theme table adjustments */
+.prose-slate .tiptap th,
+.prose-slate .tiptap td,
+.tiptap.prose-slate th,
+.tiptap.prose-slate td {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.prose-slate .tiptap th,
+.tiptap.prose-slate th {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.prose-slate .tiptap tr:nth-child(even),
+.tiptap.prose-slate tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Light theme code blocks */
+.prose-slate .tiptap pre,
+.tiptap.prose-slate pre {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.prose-slate .tiptap pre code,
+.tiptap.prose-slate pre code {
+  background: none !important;
+  color: inherit !important;
+}
+
+.prose-slate .tiptap pre code *,
+.tiptap.prose-slate pre code * {
+  color: inherit !important;
+}
+
+.prose-slate .tiptap code,
+.tiptap.prose-slate code {
+  background: rgba(0, 0, 0, 0.08);
 }

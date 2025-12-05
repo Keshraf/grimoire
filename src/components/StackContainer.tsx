@@ -83,21 +83,21 @@ export function StackContainer({ config }: { config: NexusConfig }) {
    * Determines if a pane should be collapsed based on scroll position.
    *
    * A pane collapses to a narrow vertical strip when the user has scrolled
-   * far enough that the pane would be mostly off-screen. The first pane
-   * (index 0) never collapses to ensure there's always a full pane visible.
+   * far enough that the pane would be mostly off-screen. If there's only one
+   * pane, it never collapses.
    *
    * @param index - The 0-based index of the pane in the stack
    * @returns `true` if the pane should display in collapsed mode, `false` otherwise
    */
   const getCollapseState = useCallback(
     (index: number): boolean => {
-      // First pane never collapses to ensure at least one full pane is always visible
-      if (index === 0) return false;
+      // Single pane never collapses
+      if (state.panes.length === 1) return false;
 
       const threshold = (index + 1) * paneWidthWithoutCollapsed - 60;
       return scrollLeft > threshold;
     },
-    [scrollLeft, paneWidthWithoutCollapsed]
+    [scrollLeft, paneWidthWithoutCollapsed, state.panes.length]
   );
 
   /**
@@ -375,7 +375,7 @@ function PaneWrapper({
 
   return (
     <div
-      className={`flex flex-col border-r border-white/10 bg-[var(--color-background)] overflow-y-auto transition-shadow duration-300 ${
+      className={`flex flex-col border-r border-white/10 bg-[var(--color-background)] h-screen transition-shadow duration-300 ${
         overlay ? "shadow-[-10px_0_30px_rgba(0,0,0,0.3)]" : ""
       }`}
       style={stickyStyle}

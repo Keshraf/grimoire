@@ -3,13 +3,49 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { NexusConfig, SearchResult, AISearchResult } from "@/types";
 
+/**
+ * Props for the SearchModal component.
+ */
 interface SearchModalProps {
+  /** Whether the modal is currently visible */
   isOpen: boolean;
+  /** Callback fired when the modal should close */
   onClose: () => void;
+  /** Callback fired when a search result is selected, receives the note title */
   onSelect: (title: string) => void;
+  /** NEXUS configuration object containing feature flags and search settings */
   config: NexusConfig;
 }
 
+/**
+ * A modal dialog for searching notes with optional AI-powered answers.
+ *
+ * Provides a command-palette style search interface with debounced queries,
+ * keyboard navigation (arrow keys, vim-style Ctrl+N/P), and optional AI
+ * integration for question-style queries.
+ *
+ * @param props - The component props
+ * @param props.isOpen - Controls modal visibility
+ * @param props.onClose - Handler called when modal should close (Escape key or backdrop click)
+ * @param props.onSelect - Handler called with the selected note's title
+ * @param props.config - NEXUS config for feature flags (ai_search, search.ai.enabled)
+ *
+ * @remarks
+ * - Search is debounced by 300ms to avoid excessive API calls
+ * - AI answers are only fetched for question-style queries (starting with who/what/how/etc. or ending with ?)
+ * - Keyboard navigation: Arrow Up/Down or Ctrl+P/N to navigate, Enter to select, Escape to close
+ * - Results auto-scroll to keep the selected item visible
+ *
+ * @example
+ * ```tsx
+ * <SearchModal
+ *   isOpen={showSearch}
+ *   onClose={() => setShowSearch(false)}
+ *   onSelect={(title) => navigateToNote(title)}
+ *   config={nexusConfig}
+ * />
+ * ```
+ */
 export function SearchModal({
   isOpen,
   onClose,
@@ -282,7 +318,20 @@ export function SearchModal({
   );
 }
 
-// Helper to detect question-style queries
+/**
+ * Detects whether a search query is phrased as a question.
+ *
+ * Used to determine if AI-powered answers should be fetched.
+ *
+ * @param query - The search query string to analyze
+ * @returns True if the query appears to be a question
+ *
+ * @example
+ * ```ts
+ * isQuestion("how do I authenticate?") // true
+ * isQuestion("authentication")          // false
+ * ```
+ */
 function isQuestion(query: string): boolean {
   const questionWords = [
     "what",
@@ -304,6 +353,11 @@ function isQuestion(query: string): boolean {
   );
 }
 
+/**
+ * Magnifying glass icon for the search input.
+ * @param props - Component props
+ * @param props.className - Optional CSS class names
+ */
 function SearchIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -322,6 +376,11 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Sparkles icon indicating AI-generated content.
+ * @param props - Component props
+ * @param props.className - Optional CSS class names
+ */
 function SparklesIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -330,6 +389,9 @@ function SparklesIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Animated spinner shown while search results are loading.
+ */
 function LoadingSpinner() {
   return (
     <svg

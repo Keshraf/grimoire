@@ -1,21 +1,131 @@
 /* ═══════════════════════════════════════════════════════════════════
    CODEX THEME
-   Light professional theme with blue/gray colors
-   Perfect for documentation and technical knowledge bases
+   Clean modern documentation theme inspired by GitHub docs
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Colors - Professional blue/gray palette */
-  --color-primary: #2563eb;
-  --color-secondary: #dbeafe;
-  --color-accent: #3b82f6;
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
+  /* Colors - GitHub-inspired palette */
+  --color-primary: #0969da;
+  --color-secondary: #f6f8fa;
+  --color-accent: #0969da;
+  --color-background: #ffffff;
+  --color-surface: #f6f8fa;
+  --color-text: #1f2328;
+  --color-text-muted: #656d76;
 
-  /* Fonts - Clean sans-serif for readability */
+  /* Fonts */
   --font-heading: "Inter", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-code: "JetBrains Mono", monospace;
+}
+
+/* Sidebar styling */
+.sidebar {
+  border-right: 1px solid #d0d7de;
+}
+
+/* Better link styling for light theme */
+.prose-slate a,
+.tiptap.prose-slate a {
+  color: #0969da;
+  text-decoration: none;
+}
+
+.prose-slate a:hover,
+.tiptap.prose-slate a:hover {
+  text-decoration: underline;
+}
+
+/* Internal links */
+.prose-slate .internal-link,
+.tiptap.prose-slate .internal-link {
+  color: #0969da;
+  border-bottom: 1px solid transparent;
+}
+
+.prose-slate .internal-link:hover,
+.tiptap.prose-slate .internal-link:hover {
+  border-bottom-color: #0969da;
+}
+
+/* Code blocks - cleaner look */
+.prose-slate .tiptap pre,
+.tiptap.prose-slate pre {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+.prose-slate .tiptap code,
+.tiptap.prose-slate code {
+  background: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+}
+
+/* Tables */
+.prose-slate .tiptap table,
+.tiptap.prose-slate table {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.prose-slate .tiptap th,
+.tiptap.prose-slate th {
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  font-weight: 600;
+}
+
+.prose-slate .tiptap td,
+.tiptap.prose-slate td {
+  border-bottom: 1px solid #d0d7de;
+}
+
+.prose-slate .tiptap tr:last-child td,
+.tiptap.prose-slate tr:last-child td {
+  border-bottom: none;
+}
+
+/* Blockquotes */
+.prose-slate .tiptap blockquote,
+.tiptap.prose-slate blockquote {
+  border-left: 4px solid #d0d7de;
+  color: #656d76;
+}
+
+/* Horizontal rule */
+.prose-slate .tiptap hr,
+.tiptap.prose-slate hr {
+  border-top-color: #d0d7de;
+}
+
+/* Headings */
+.prose-slate .tiptap h1,
+.prose-slate .tiptap h2,
+.tiptap.prose-slate h1,
+.tiptap.prose-slate h2 {
+  border-bottom: 1px solid #d0d7de;
+  padding-bottom: 0.3em;
+}
+
+/* Backlinks panel */
+.prose-slate .backlinks-panel,
+.backlinks-panel {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+/* Linear nav */
+.prose-slate nav,
+nav {
+  border-top-color: #d0d7de;
+}
+
+/* Selection */
+.prose-slate ::selection,
+.tiptap.prose-slate ::selection {
+  background: rgba(9, 105, 218, 0.2);
 }

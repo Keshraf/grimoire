@@ -51,6 +51,24 @@ module.exports = {
             "ol > li::marker": {
               color: "var(--color-text-muted)",
             },
+            table: {
+              width: "100%",
+              borderCollapse: "collapse",
+            },
+            "thead th": {
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-text)",
+              fontWeight: "600",
+              padding: "0.5rem 0.75rem",
+              borderBottom: "2px solid var(--color-text-muted)",
+            },
+            "tbody td": {
+              padding: "0.5rem 0.75rem",
+              borderBottom: "1px solid var(--color-surface)",
+            },
+            "tbody tr": {
+              borderBottom: "1px solid var(--color-surface)",
+            },
           },
         },
         invert: {
