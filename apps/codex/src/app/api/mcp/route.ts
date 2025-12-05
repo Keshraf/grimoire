@@ -1,410 +1,403 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createClient } from "@nexus/core/lib/supabase/server";
 import { getConfig } from "@nexus/core/lib/config";
 import { aiSearch } from "@nexus/core/lib/ai-search";
 import { parseWikilinks } from "@nexus/core/lib/links";
 import { getLocalGraph } from "@nexus/core/lib/graph";
-import type {
-  MCPManifest,
-  MCPToolRequest,
-  MCPResponse,
-  ListPagesResult,
-  GetPageResult,
-  SearchToolResult,
-  AskToolResult,
-  GetConnectionsResult,
-  Note,
-} from "@nexus/core/types";
+import type { Note } from "@nexus/core/types";
+import { z } from "zod";
 
-// MCP Manifest with tool definitions
-const manifest: MCPManifest = {
-  name: "nexus-mcp",
-  version: "1.0.0",
-  description: "MCP server for NEXUS knowledge base",
-  tools: [
-    {
-      name: "list_pages",
-      description: "List all pages in the knowledge base with their titles",
-      inputSchema: {
-        type: "object",
-        properties: {},
-        required: [],
-      },
-    },
-    {
-      name: "get_page",
-      description:
-        "Get the full content of a specific page including outlinks and backlinks",
-      inputSchema: {
-        type: "object",
-        properties: {
-          title: {
-            type: "string",
-            description: "The title of the page to retrieve",
-          },
-        },
-        required: ["title"],
-      },
-    },
-    {
-      name: "search",
-      description: "Search the knowledge base for pages matching a query",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Search query to find matching pages",
-          },
-        },
-        required: ["query"],
-      },
-    },
-    {
-      name: "ask",
-      description:
-        "Ask a natural language question and get an AI-generated answer based on the knowledge base",
-      inputSchema: {
-        type: "object",
-        properties: {
-          question: {
-            type: "string",
-            description: "Natural language question to answer",
-          },
-        },
-        required: ["question"],
-      },
-    },
-    {
-      name: "get_connections",
-      description:
-        "Get the connections (outlinks, backlinks, local graph) for a specific page",
-      inputSchema: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "The title of the page" },
-        },
-        required: ["title"],
-      },
-    },
-  ],
-};
-
-// CORS headers for mcp-remote proxy
+// CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, mcp-session-id",
 };
 
-// OPTIONS handler for CORS preflight
-export async function OPTIONS(): Promise<NextResponse> {
-  return new NextResponse(null, { status: 204, headers: corsHeaders });
-}
+// Create MCP server with tools
+function createMcpServer() {
+  const server = new McpServer(
+    { name: "codex-mcp", version: "1.0.0" },
+    { capabilities: { tools: {} } }
+  );
 
-// GET handler - returns MCP manifest
-export async function GET(): Promise<NextResponse<MCPManifest>> {
-  return NextResponse.json(manifest, { headers: corsHeaders });
-}
-
-// Tool handlers
-async function handleListPages(): Promise<ListPagesResult> {
-  const supabase = await createClient();
-  const { data: notes, error } = await supabase
-    .from("notes")
-    .select("title")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    throw new Error("Failed to fetch pages");
-  }
-
-  return { pages: notes || [] };
-}
-
-async function handleGetPage(input: { title: string }): Promise<GetPageResult> {
-  const { title } = input;
-  const supabase = await createClient();
-
-  // Fetch the note
-  const { data: note, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("title", title)
-    .single();
-
-  if (error || !note) {
-    throw { status: 404, message: `Page '${title}' not found` };
-  }
-
-  // Extract outlinks from content
-  const outlinks = parseWikilinks(note.content);
-
-  // Fetch backlinks
-  const { data: links } = await supabase
-    .from("links")
-    .select("source_title")
-    .eq("target_title", title);
-
-  const backlinks = links?.map((l) => l.source_title) || [];
-
-  return {
-    title: note.title,
-    content: note.content,
-    outlinks,
-    backlinks,
-  };
-}
-
-async function handleSearch(input: {
-  query: string;
-}): Promise<SearchToolResult> {
-  const { query } = input;
-  const searchQuery = query.trim();
-  const supabase = await createClient();
-
-  const { data: notes, error } = await supabase
-    .from("notes")
-    .select("title, content")
-    .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
-    .limit(20);
-
-  if (error) {
-    throw new Error("Failed to search pages");
-  }
-
-  const results = (notes || []).map((note) => {
-    const content = note.content || "";
-    const lowerContent = content.toLowerCase();
-    const lowerQuery = searchQuery.toLowerCase();
-    const matchIndex = lowerContent.indexOf(lowerQuery);
-
-    let excerpt = "";
-    if (matchIndex >= 0) {
-      const start = Math.max(0, matchIndex - 50);
-      const end = Math.min(
-        content.length,
-        matchIndex + searchQuery.length + 100
-      );
-      excerpt =
-        (start > 0 ? "..." : "") +
-        content.slice(start, end) +
-        (end < content.length ? "..." : "");
-    } else {
-      excerpt = content.slice(0, 150) + (content.length > 150 ? "..." : "");
+  // Tool: list_pages
+  server.tool(
+    "list_pages",
+    "List all pages in the knowledge base with their titles",
+    {},
+    async () => {
+      const supabase = await createClient();
+      const { data: notes, error } = await supabase
+        .from("notes")
+        .select("title")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error("Failed to fetch pages");
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ pages: notes || [] }, null, 2),
+          },
+        ],
+      };
     }
+  );
 
-    return { title: note.title, excerpt };
-  });
+  // Tool: get_page
+  server.tool(
+    "get_page",
+    "Get the full content of a specific page including outlinks and backlinks",
+    { title: z.string().describe("The title of the page to retrieve") },
+    async ({ title }) => {
+      const supabase = await createClient();
+      const { data: note, error } = await supabase
+        .from("notes")
+        .select("*")
+        .eq("title", title)
+        .single();
+      if (error || !note) throw new Error(`Page '${title}' not found`);
 
-  return { results };
+      const outlinks = parseWikilinks(note.content);
+      const { data: links } = await supabase
+        .from("links")
+        .select("source_title")
+        .eq("target_title", title);
+      const backlinks = links?.map((l) => l.source_title) || [];
+
+      const result = {
+        title: note.title,
+        content: note.content,
+        outlinks,
+        backlinks,
+      };
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  // Tool: search
+  server.tool(
+    "search",
+    "Search the knowledge base for pages matching a query",
+    { query: z.string().describe("Search query to find matching pages") },
+    async ({ query }) => {
+      const searchQuery = query.trim();
+      const supabase = await createClient();
+      const { data: notes, error } = await supabase
+        .from("notes")
+        .select("title, content")
+        .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+        .limit(20);
+      if (error) throw new Error("Failed to search pages");
+
+      const results = (notes || []).map((note) => {
+        const content = note.content || "";
+        const lowerContent = content.toLowerCase();
+        const lowerQuery = searchQuery.toLowerCase();
+        const matchIndex = lowerContent.indexOf(lowerQuery);
+        let excerpt = "";
+        if (matchIndex >= 0) {
+          const start = Math.max(0, matchIndex - 50);
+          const end = Math.min(
+            content.length,
+            matchIndex + searchQuery.length + 100
+          );
+          excerpt =
+            (start > 0 ? "..." : "") +
+            content.slice(start, end) +
+            (end < content.length ? "..." : "");
+        } else {
+          excerpt = content.slice(0, 150) + (content.length > 150 ? "..." : "");
+        }
+        return { title: note.title, excerpt };
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify({ results }, null, 2) }],
+      };
+    }
+  );
+
+  // Tool: ask
+  server.tool(
+    "ask",
+    "Ask a natural language question and get an AI-generated answer based on the knowledge base",
+    { question: z.string().describe("Natural language question to answer") },
+    async ({ question }) => {
+      const config = getConfig();
+      const aiEnabled = config.features.ai_search && config.search?.ai?.enabled;
+      const provider = config.search?.ai?.provider || "openai";
+      const apiKey =
+        provider === "gemini"
+          ? process.env.GEMINI_API_KEY
+          : provider === "anthropic"
+          ? process.env.ANTHROPIC_API_KEY
+          : process.env.OPENAI_API_KEY;
+
+      if (!aiEnabled || !apiKey) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "AI search is not available" }),
+            },
+          ],
+        };
+      }
+
+      const supabase = await createClient();
+      const keywords = question
+        .toLowerCase()
+        .replace(/[?.,!]/g, "")
+        .split(/\s+/)
+        .filter(
+          (w) =>
+            w.length > 3 &&
+            ![
+              "what",
+              "how",
+              "does",
+              "the",
+              "this",
+              "that",
+              "with",
+              "from",
+              "have",
+              "about",
+            ].includes(w)
+        );
+      const searchTerms = keywords.length > 0 ? keywords : [question];
+      const orConditions = searchTerms
+        .map((term) => `title.ilike.%${term}%,content.ilike.%${term}%`)
+        .join(",");
+
+      const { data: notes, error } = await supabase
+        .from("notes")
+        .select("*")
+        .or(orConditions)
+        .limit(5);
+      if (error) throw new Error("Failed to search for relevant pages");
+
+      if (!notes || notes.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                answer: "No relevant information found.",
+                sources: [],
+              }),
+            },
+          ],
+        };
+      }
+
+      const result = await aiSearch(question, notes as Note[], {
+        provider,
+        apiKey,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                answer: result.answer,
+                sources: result.sources.map((s) => ({ title: s.title })),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  );
+
+  // Tool: get_connections
+  server.tool(
+    "get_connections",
+    "Get the connections (outlinks, backlinks, local graph) for a specific page",
+    { title: z.string().describe("The title of the page") },
+    async ({ title }) => {
+      const supabase = await createClient();
+      const { data: note, error } = await supabase
+        .from("notes")
+        .select("*")
+        .eq("title", title)
+        .single();
+      if (error || !note) throw new Error(`Page '${title}' not found`);
+
+      const outlinks = parseWikilinks(note.content);
+      const { data: links } = await supabase
+        .from("links")
+        .select("source_title")
+        .eq("target_title", title);
+      const backlinks = links?.map((l) => l.source_title) || [];
+      const { data: allNotes } = await supabase.from("notes").select("*");
+      const localGraph = getLocalGraph(title, (allNotes as Note[]) || []);
+
+      const result = {
+        title,
+        outlinks,
+        backlinks,
+        localGraph: { nodes: localGraph.nodes, edges: localGraph.edges },
+      };
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  return server;
 }
 
-async function handleAsk(input: { question: string }): Promise<AskToolResult> {
-  const { question } = input;
-  const config = getConfig();
-  const aiEnabled = config.features.ai_search && config.search?.ai?.enabled;
-  const provider = config.search?.ai?.provider || "openai";
+// Convert Next.js request to Node-like request for the SDK
+async function handleMcpRequest(req: NextRequest): Promise<Response> {
+  const server = createMcpServer();
 
-  // Get the appropriate API key based on provider
-  const apiKey =
-    provider === "gemini"
-      ? process.env.GEMINI_API_KEY
-      : provider === "anthropic"
-      ? process.env.ANTHROPIC_API_KEY
-      : process.env.OPENAI_API_KEY;
+  try {
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // Stateless mode for serverless
+    });
 
-  if (!aiEnabled || !apiKey) {
-    throw { status: 503, message: "AI search is not available" };
-  }
+    await server.connect(transport);
 
-  const supabase = await createClient();
+    // Get request body
+    const body = await req.json();
 
-  // Search for relevant notes - extract keywords from question
-  const keywords = question
-    .toLowerCase()
-    .replace(/[?.,!]/g, "")
-    .split(/\s+/)
-    .filter(
-      (w) =>
-        w.length > 3 &&
-        ![
-          "what",
-          "how",
-          "does",
-          "the",
-          "this",
-          "that",
-          "with",
-          "from",
-          "have",
-          "about",
-        ].includes(w)
-    );
+    // Create a mock Express-like request/response for the SDK
+    const headers: Record<string, string> = {};
+    req.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
 
-  // Build OR conditions for each keyword
-  const searchTerms = keywords.length > 0 ? keywords : [question];
-  const orConditions = searchTerms
-    .map((term) => `title.ilike.%${term}%,content.ilike.%${term}%`)
-    .join(",");
+    // Handle the request using the transport
+    const responseChunks: Uint8Array[] = [];
+    let responseStatus = 200;
+    let responseHeaders: Record<string, string> = { ...corsHeaders };
 
-  const { data: notes, error } = await supabase
-    .from("notes")
-    .select("*")
-    .or(orConditions)
-    .limit(5);
-
-  if (error) {
-    throw new Error("Failed to search for relevant pages");
-  }
-
-  if (!notes || notes.length === 0) {
-    return {
-      answer: "No relevant information found in the knowledge base.",
-      sources: [],
+    const mockRes = {
+      statusCode: 200,
+      setHeader: (name: string, value: string) => {
+        responseHeaders[name] = value;
+      },
+      writeHead: (status: number, headers?: Record<string, string>) => {
+        responseStatus = status;
+        if (headers) responseHeaders = { ...responseHeaders, ...headers };
+        return mockRes;
+      },
+      write: (chunk: string | Buffer) => {
+        const data =
+          typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
+        responseChunks.push(
+          data instanceof Uint8Array ? data : new Uint8Array(data)
+        );
+        return true;
+      },
+      end: (chunk?: string | Buffer) => {
+        if (chunk) {
+          const data =
+            typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
+          responseChunks.push(
+            data instanceof Uint8Array ? data : new Uint8Array(data)
+          );
+        }
+      },
+      on: () => mockRes,
+      once: () => mockRes,
+      emit: () => false,
+      getHeader: (name: string) => responseHeaders[name],
+      headersSent: false,
     };
-  }
 
-  const result = await aiSearch(question, notes as Note[], {
-    provider,
-    apiKey,
-  });
+    const mockReq = {
+      method: req.method,
+      headers,
+      body,
+      url: req.url,
+      on: () => mockReq,
+      once: () => mockReq,
+    };
 
-  return {
-    answer: result.answer,
-    sources: result.sources.map((s) => ({ title: s.title })),
-  };
-}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await transport.handleRequest(mockReq as any, mockRes as any, body);
 
-async function handleGetConnections(input: {
-  title: string;
-}): Promise<GetConnectionsResult> {
-  const { title } = input;
-  const supabase = await createClient();
-
-  // Verify note exists
-  const { data: note, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("title", title)
-    .single();
-
-  if (error || !note) {
-    throw { status: 404, message: `Page '${title}' not found` };
-  }
-
-  // Extract outlinks
-  const outlinks = parseWikilinks(note.content);
-
-  // Fetch backlinks
-  const { data: links } = await supabase
-    .from("links")
-    .select("source_title")
-    .eq("target_title", title);
-
-  const backlinks = links?.map((l) => l.source_title) || [];
-
-  // Get all notes for local graph
-  const { data: allNotes } = await supabase.from("notes").select("*");
-  const localGraph = getLocalGraph(title, (allNotes as Note[]) || []);
-
-  return {
-    title,
-    outlinks,
-    backlinks,
-    localGraph: {
-      nodes: localGraph.nodes,
-      edges: localGraph.edges,
-    },
-  };
-}
-
-// Helper to create JSON response with CORS headers
-function jsonResponse<T>(data: T, status = 200): NextResponse<T> {
-  return NextResponse.json(data, { status, headers: corsHeaders });
-}
-
-// POST handler - invokes tools
-export async function POST(
-  request: NextRequest
-): Promise<NextResponse<MCPResponse>> {
-  let body: MCPToolRequest;
-
-  try {
-    body = await request.json();
-  } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
-  }
-
-  if (!body.tool || typeof body.tool !== "string") {
-    return jsonResponse({ error: "Missing 'tool' field" }, 400);
-  }
-
-  const toolName = body.tool;
-  const input = body.input || {};
-
-  try {
-    switch (toolName) {
-      case "list_pages": {
-        const result = await handleListPages();
-        return jsonResponse({ result });
-      }
-
-      case "get_page": {
-        if (!input.title || typeof input.title !== "string") {
-          return jsonResponse(
-            { error: "Missing required parameter: title" },
-            400
-          );
-        }
-        const result = await handleGetPage({ title: input.title as string });
-        return jsonResponse({ result });
-      }
-
-      case "search": {
-        if (!input.query || typeof input.query !== "string") {
-          return jsonResponse(
-            { error: "Missing required parameter: query" },
-            400
-          );
-        }
-        const result = await handleSearch({ query: input.query as string });
-        return jsonResponse({ result });
-      }
-
-      case "ask": {
-        if (!input.question || typeof input.question !== "string") {
-          return jsonResponse(
-            { error: "Missing required parameter: question" },
-            400
-          );
-        }
-        const result = await handleAsk({ question: input.question as string });
-        return jsonResponse({ result });
-      }
-
-      case "get_connections": {
-        if (!input.title || typeof input.title !== "string") {
-          return jsonResponse(
-            { error: "Missing required parameter: title" },
-            400
-          );
-        }
-        const result = await handleGetConnections({
-          title: input.title as string,
-        });
-        return jsonResponse({ result });
-      }
-
-      default:
-        return jsonResponse({ error: `Unknown tool: ${toolName}` }, 400);
+    // Combine response chunks
+    const totalLength = responseChunks.reduce(
+      (acc, chunk) => acc + chunk.length,
+      0
+    );
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of responseChunks) {
+      combined.set(chunk, offset);
+      offset += chunk.length;
     }
-  } catch (err: unknown) {
-    if (err && typeof err === "object" && "status" in err && "message" in err) {
-      const typedErr = err as { status: number; message: string };
-      return jsonResponse({ error: typedErr.message }, typedErr.status);
-    }
-    console.error("MCP tool error:", err);
-    return jsonResponse({ error: "Internal server error" }, 500);
+
+    await transport.close();
+    await server.close();
+
+    return new Response(combined, {
+      status: responseStatus,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    console.error("MCP error:", error);
+    await server.close();
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: { code: -32603, message: "Internal server error" },
+        id: null,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
+}
+
+// POST handler - main MCP endpoint
+export async function POST(req: NextRequest): Promise<Response> {
+  return handleMcpRequest(req);
+}
+
+// GET handler - not allowed for stateless mode
+export async function GET(): Promise<Response> {
+  return new Response(
+    JSON.stringify({
+      jsonrpc: "2.0",
+      error: { code: -32000, message: "Method not allowed. Use POST." },
+      id: null,
+    }),
+    {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    }
+  );
+}
+
+// DELETE handler - not allowed for stateless mode
+export async function DELETE(): Promise<Response> {
+  return new Response(
+    JSON.stringify({
+      jsonrpc: "2.0",
+      error: { code: -32000, message: "Method not allowed." },
+      id: null,
+    }),
+    {
+      status: 405,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    }
+  );
+}
+
+// OPTIONS handler for CORS
+export async function OPTIONS(): Promise<Response> {
+  return new Response(null, { status: 204, headers: corsHeaders });
 }
