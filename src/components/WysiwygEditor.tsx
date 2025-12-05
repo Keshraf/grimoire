@@ -52,6 +52,14 @@ interface EditorConfig {
 /**
  * Custom TipTap node for rendering wikilinks in `[[Title]]` or `[[Title|Display]]` format.
  * Renders as clickable buttons to avoid browser navigation behavior.
+ *
+ * @remarks
+ * - Supports both simple `[[Title]]` and aliased `[[Title|Display Text]]` formats
+ * - Renders as `<button>` elements with `data-internal="true"` to enable click handling
+ * - Integrates with tiptap-markdown for bidirectional markdown conversion:
+ *   - Parsing: Handled by `processWikilinksForEditor()` which converts `[[...]]` to buttons
+ *   - Serialization: The `addStorage().markdown.serialize()` method converts back to `[[...]]`
+ * - Atomic node (cannot be partially selected or edited inline)
  */
 const WikiLink = Node.create({
   name: "wikiLink",
@@ -98,6 +106,40 @@ const WikiLink = Node.create({
       }),
       node.attrs.display || node.attrs.title,
     ];
+  },
+
+  /**
+   * Provides markdown serialization support for the tiptap-markdown extension.
+   * Converts WikiLink nodes back to `[[Title]]` or `[[Title|Display]]` syntax when
+   * exporting editor content as markdown.
+   *
+   * @returns Storage object with markdown serialization configuration
+   */
+  addStorage() {
+    return {
+      markdown: {
+        /**
+         * Serializes a WikiLink node to markdown wikilink syntax.
+         * @param state - Markdown serializer state with write method
+         * @param node - The WikiLink node being serialized
+         */
+        serialize(
+          state: { write: (text: string) => void },
+          node: { attrs: { title: string; display?: string } }
+        ) {
+          const { title, display } = node.attrs;
+          // If display text differs from title, use [[title|display]] format
+          if (display && display !== title) {
+            state.write(`[[${title}|${display}]]`);
+          } else {
+            state.write(`[[${title}]]`);
+          }
+        },
+        parse: {
+          // Parsing is handled by processWikilinksForEditor() before content reaches TipTap
+        },
+      },
+    };
   },
 });
 

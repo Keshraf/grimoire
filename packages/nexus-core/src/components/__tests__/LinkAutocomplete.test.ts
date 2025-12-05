@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Note } from "@/types";
+import type { Note } from "../../types";
 
 // Test the filtering logic used in LinkAutocomplete
 function filterNotes(notes: Note[], query: string): Note[] {

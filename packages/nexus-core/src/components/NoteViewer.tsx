@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 
 /**
  * Props for the NoteViewer component.

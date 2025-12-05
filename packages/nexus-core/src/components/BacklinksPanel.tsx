@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 
 interface BacklinksPanelProps {
   backlinks: string[];

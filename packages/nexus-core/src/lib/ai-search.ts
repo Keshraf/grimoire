@@ -1,4 +1,4 @@
-import type { Note, AISearchResult, SearchResult } from "@/types";
+import type { Note, AISearchResult, SearchResult } from "../types";
 
 export interface AISearchOptions {
   provider: "openai" | "anthropic" | "gemini";

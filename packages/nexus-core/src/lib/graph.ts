@@ -1,4 +1,4 @@
-import type { Note, GraphData, GraphNode, GraphEdge } from "@/types";
+import type { Note, GraphData, GraphNode, GraphEdge } from "../types";
 import { extractOutlinks } from "./markdown";
 
 /**

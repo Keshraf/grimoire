@@ -18,7 +18,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type { Note } from "@/types";
+import type { Note } from "../types";
 import { LinkAutocomplete } from "./LinkAutocomplete";
 
 /**
@@ -98,6 +98,29 @@ const WikiLink = Node.create({
       }),
       node.attrs.display || node.attrs.title,
     ];
+  },
+
+  // Add markdown serialization for tiptap-markdown
+  addStorage() {
+    return {
+      markdown: {
+        serialize(
+          state: { write: (text: string) => void },
+          node: { attrs: { title: string; display?: string } }
+        ) {
+          const { title, display } = node.attrs;
+          // If display text differs from title, use [[title|display]] format
+          if (display && display !== title) {
+            state.write(`[[${title}|${display}]]`);
+          } else {
+            state.write(`[[${title}]]`);
+          }
+        },
+        parse: {
+          // This is handled by processWikilinksForEditor
+        },
+      },
+    };
   },
 });
 

@@ -8,8 +8,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { AuthContextValue, AuthUser, LoginCredentials } from "@/types";
-import { createClient } from "@/lib/supabase/client";
+import type { AuthContextValue, AuthUser, LoginCredentials } from "../types";
+import { createClient } from "../lib/supabase/client";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 

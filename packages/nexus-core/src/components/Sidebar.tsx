@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { NexusConfig, Note } from "@/types";
-import { useAuth } from "@/hooks";
+import type { NexusConfig, Note } from "../types";
+import { useAuth } from "../hooks";
 
 /**
  * Props for the Sidebar component.

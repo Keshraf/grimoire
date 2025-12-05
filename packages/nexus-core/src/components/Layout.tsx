@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
-import type { NexusConfig, Note } from "@/types";
+import type { NexusConfig, Note } from "../types";
 import { Sidebar } from "./Sidebar";
 import { ImportExportModal } from "./ImportExportModal";
 

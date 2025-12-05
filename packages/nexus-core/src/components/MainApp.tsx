@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import type { NexusConfig } from "@/types";
-import { DEFAULT_CONFIG } from "@/lib/config.defaults";
+import type { NexusConfig } from "../types";
+import { DEFAULT_CONFIG } from "../lib/config.defaults";
 import {
   useNavigation,
   useNotes,
@@ -11,7 +11,7 @@ import {
   useURLSync,
   useAuth,
   useKeyboardShortcuts,
-} from "@/hooks";
+} from "../hooks";
 import { Layout } from "./Layout";
 import { StackContainer } from "./StackContainer";
 import { SearchModal } from "./SearchModal";

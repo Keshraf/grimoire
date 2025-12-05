@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { navigationReducer } from "../useNavigation";
-import type { NavigationState, NavigationAction } from "@/types";
+import type { NavigationState, NavigationAction } from "../types";
 
 // Helper to create a mock pane
 function mockPane(title: string, id = crypto.randomUUID()) {

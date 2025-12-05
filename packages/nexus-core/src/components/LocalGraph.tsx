@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import type { GraphData, GraphNode } from "@/types";
+import type { GraphData, GraphNode } from "../types";
 
 interface LocalGraphProps {
   graph: GraphData;

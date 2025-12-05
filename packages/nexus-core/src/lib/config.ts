@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 import { DEFAULT_CONFIG } from "./config.defaults";
 
 let cachedConfig: NexusConfig | null = null;

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { Note, NoteWithLinks, NexusConfig } from "@/types";
-import { useAuth } from "@/hooks";
+import type { Note, NoteWithLinks, NexusConfig } from "../types";
+import { useAuth } from "../hooks";
 import { PaneHeader } from "./PaneHeader";
 import { WysiwygEditor } from "./WysiwygEditor";
 import { NoteViewer } from "./NoteViewer";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { LinearNav } from "./LinearNav";
 import { FloatingGraph } from "./FloatingGraph";
-import { getLocalGraph } from "@/lib/graph";
+import { getLocalGraph } from "../lib/graph";
 
 /** Width of the collapsed pane strip showing only the vertical title */
 const COLLAPSED_WIDTH = 40;

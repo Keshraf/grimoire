@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { NexusConfig, SearchResult, AISearchResult } from "@/types";
+import type { NexusConfig, SearchResult, AISearchResult } from "../types";
 
 /**
  * Props for the SearchModal component.

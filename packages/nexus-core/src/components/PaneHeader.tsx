@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 import { PaneMenu } from "./PaneMenu";
 
 interface PaneHeaderProps {

@@ -5,8 +5,8 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import type { Note, NoteWithLinks } from "@/types";
-import { extractOutlinks, renderMarkdown } from "@/lib/markdown";
+import type { Note, NoteWithLinks } from "../types";
+import { extractOutlinks, renderMarkdown } from "../lib/markdown";
 
 // Re-export for provider setup
 export { QueryClient, QueryClientProvider };

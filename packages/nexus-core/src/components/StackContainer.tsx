@@ -1,15 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
-import { useNavigation } from "@/hooks/useNavigation";
+import { useNavigation } from "../hooks/useNavigation";
 import {
   useNotes,
   useNote,
   useUpdateNote,
   useCreateNote,
   useDeleteNote,
-} from "@/hooks/useNotes";
-import type { NexusConfig } from "@/types";
+} from "../hooks/useNotes";
+import type { NexusConfig } from "../types";
 import { Pane } from "./Pane";
 
 /** Width of a collapsed pane showing only the vertical title */

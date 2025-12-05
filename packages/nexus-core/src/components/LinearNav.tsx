@@ -1,6 +1,6 @@
 "use client";
 
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 
 interface LinearNavProps {
   currentTitle: string;

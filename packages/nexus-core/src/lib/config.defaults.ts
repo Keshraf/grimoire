@@ -1,4 +1,4 @@
-import type { NexusConfig } from "@/types";
+import type { NexusConfig } from "../types";
 
 export const DEFAULT_CONFIG: NexusConfig = {
   site: {

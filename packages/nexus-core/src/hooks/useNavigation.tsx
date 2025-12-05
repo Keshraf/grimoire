@@ -12,7 +12,7 @@ import type {
   NavigationState,
   NavigationAction,
   NavigationContextValue,
-} from "@/types";
+} from "../types";
 
 // Helper to create a new pane
 function createPane(title: string): Pane {

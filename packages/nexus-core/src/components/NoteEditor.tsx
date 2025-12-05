@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import type { Note, NexusConfig } from "@/types";
+import type { Note, NexusConfig } from "../types";
 import { WysiwygEditor, WysiwygEditorRef } from "./WysiwygEditor";
 
 // Minimal theme config for standalone editor usage

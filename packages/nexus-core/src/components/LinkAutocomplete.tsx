@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import type { Note } from "@/types";
+import type { Note } from "../types";
 
 /**
  * Props for the LinkAutocomplete component.
