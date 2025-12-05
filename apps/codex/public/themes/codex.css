@@ -48,20 +48,43 @@
   border-bottom-color: #0969da;
 }
 
-/* Code blocks - cleaner look */
+/* Code blocks - cleaner look with visible text */
 .prose-slate .tiptap pre,
-.tiptap.prose-slate pre {
-  background: #f6f8fa;
+.tiptap.prose-slate pre,
+.prose pre,
+pre {
+  background: #f6f8fa !important;
   border: 1px solid #d0d7de;
   border-radius: 6px;
+  color: #1f2328 !important;
+}
+
+.prose-slate .tiptap pre code,
+.tiptap.prose-slate pre code,
+.prose pre code,
+pre code {
+  background: transparent !important;
+  color: #1f2328 !important;
+  padding: 0;
+}
+
+/* Ensure all text inside code blocks is visible */
+.prose-slate .tiptap pre code *,
+.tiptap.prose-slate pre code *,
+.prose pre code *,
+pre code * {
+  color: #1f2328 !important;
 }
 
 .prose-slate .tiptap code,
-.tiptap.prose-slate code {
+.tiptap.prose-slate code,
+.prose code,
+code {
   background: rgba(175, 184, 193, 0.2);
   border-radius: 6px;
   padding: 0.2em 0.4em;
   font-size: 85%;
+  color: #1f2328 !important;
 }
 
 /* Tables */
@@ -128,4 +151,12 @@ nav {
 .prose-slate ::selection,
 .tiptap.prose-slate ::selection {
   background: rgba(9, 105, 218, 0.2);
+}
+
+/* Language-specific code blocks */
+.language-http,
+code.language-http,
+pre code.language-http,
+[class*="language-"] {
+  color: #1f2328 !important;
 }
