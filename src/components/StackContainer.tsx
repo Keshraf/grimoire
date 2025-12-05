@@ -79,28 +79,53 @@ export function StackContainer({ config }: { config: NexusConfig }) {
   // This is paneWidth minus the collapsed width (like reference: 625 - 40 = 585)
   const paneWidthWithoutCollapsed = paneWidth - COLLAPSED_WIDTH;
 
-  // Calculate collapse state based on scroll position (like reference implementation)
-  // A pane collapses when scrollLeft > (index + 1) * paneWidthWithoutCollapsed - 60
+  /**
+   * Determines if a pane should be collapsed based on scroll position.
+   *
+   * A pane collapses to a narrow vertical strip when the user has scrolled
+   * far enough that the pane would be mostly off-screen. The first pane
+   * (index 0) never collapses to ensure there's always a full pane visible.
+   *
+   * @param index - The 0-based index of the pane in the stack
+   * @returns `true` if the pane should display in collapsed mode, `false` otherwise
+   */
   const getCollapseState = useCallback(
-    (index: number) => {
+    (index: number): boolean => {
+      // First pane never collapses to ensure at least one full pane is always visible
+      if (index === 0) return false;
+
       const threshold = (index + 1) * paneWidthWithoutCollapsed - 60;
       return scrollLeft > threshold;
     },
     [scrollLeft, paneWidthWithoutCollapsed]
   );
 
-  // Calculate overlay state (shadow on left side when overlapping)
-  // Shows shadow when scrollLeft > (index - 1) * paneWidthWithoutCollapsed
+  /**
+   * Determines if a pane should show a shadow overlay on its left edge.
+   *
+   * The shadow creates visual depth when panes overlap during horizontal
+   * scrolling, helping users understand the stacking order.
+   *
+   * @param index - The 0-based index of the pane in the stack
+   * @returns `true` if the pane should display a left shadow, `false` otherwise
+   */
   const getOverlayState = useCallback(
-    (index: number) => {
+    (index: number): boolean => {
       const threshold = (index - 1) * paneWidthWithoutCollapsed;
       return scrollLeft > threshold;
     },
     [scrollLeft, paneWidthWithoutCollapsed]
   );
 
-  // Scroll to a specific pane
-  const scrollToPane = useCallback((index: number) => {
+  /**
+   * Smoothly scrolls the container to bring a specific pane into view.
+   *
+   * Used when clicking on a collapsed pane to expand it, or when
+   * programmatically navigating to a specific pane in the stack.
+   *
+   * @param index - The 0-based index of the pane to scroll to
+   */
+  const scrollToPane = useCallback((index: number): void => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -114,36 +139,52 @@ export function StackContainer({ config }: { config: NexusConfig }) {
     }
   }, []);
 
+  /**
+   * Handles wikilink clicks by opening the target note in a new pane.
+   * Panes to the right of the clicked pane are closed before opening the new one.
+   */
   const handleLinkClick = useCallback(
-    (title: string, paneIndex: number) => {
+    (title: string, paneIndex: number): void => {
       pushPane(title, paneIndex);
     },
     [pushPane]
   );
 
+  /**
+   * Closes a pane at the specified index and all panes to its right.
+   */
   const handleClose = useCallback(
-    (index: number) => {
+    (index: number): void => {
       closePane(index);
     },
     [closePane]
   );
 
+  /**
+   * Creates a new note with the given title (typically from autocomplete).
+   */
   const handleCreateNote = useCallback(
-    async (title: string) => {
+    async (title: string): Promise<void> => {
       await createNoteMutation.mutateAsync({ title, content: "" });
     },
     [createNoteMutation]
   );
 
+  /**
+   * Closes all panes displaying the deleted note.
+   */
   const handleDeleteNote = useCallback(
-    (deletedTitle: string) => {
+    (deletedTitle: string): void => {
       closePanesByTitle(deletedTitle);
     },
     [closePanesByTitle]
   );
 
+  /**
+   * Updates the title in navigation state when a note is renamed.
+   */
   const handleTitleChange = useCallback(
-    (oldTitle: string, newTitle: string) => {
+    (oldTitle: string, newTitle: string): void => {
       updatePaneTitle(oldTitle, newTitle);
     },
     [updatePaneTitle]
