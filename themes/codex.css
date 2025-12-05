@@ -50,18 +50,33 @@
 
 /* Code blocks - cleaner look */
 .prose-slate .tiptap pre,
-.tiptap.prose-slate pre {
+.tiptap.prose-slate pre,
+.prose pre,
+pre {
   background: #f6f8fa;
   border: 1px solid #d0d7de;
   border-radius: 6px;
+  color: #1f2328;
+}
+
+.prose-slate .tiptap pre code,
+.tiptap.prose-slate pre code,
+.prose pre code,
+pre code {
+  background: transparent;
+  color: #1f2328;
+  padding: 0;
 }
 
 .prose-slate .tiptap code,
-.tiptap.prose-slate code {
+.tiptap.prose-slate code,
+.prose code,
+code {
   background: rgba(175, 184, 193, 0.2);
   border-radius: 6px;
   padding: 0.2em 0.4em;
   font-size: 85%;
+  color: #1f2328;
 }
 
 /* Tables */

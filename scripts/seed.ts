@@ -60,16 +60,22 @@ async function seed(exampleName: string): Promise<SeedResult> {
     return result;
   }
 
-  // Locate seed file
-  const seedFilePath = path.join(
-    process.cwd(),
-    "examples",
-    exampleName,
-    "seed-data.sql"
-  );
+  // Locate seed file - check multiple locations
+  const possiblePaths = [
+    // When run from app workspace (apps/codex or apps/arcana)
+    path.join(process.cwd(), "seed-data.sql"),
+    // When run from root with example name
+    path.join(process.cwd(), "examples", exampleName, "seed-data.sql"),
+    // When run from root for apps
+    path.join(process.cwd(), "apps", exampleName, "seed-data.sql"),
+  ];
 
-  if (!fs.existsSync(seedFilePath)) {
-    result.errors.push(`Seed file not found: ${seedFilePath}`);
+  const seedFilePath = possiblePaths.find((p) => fs.existsSync(p));
+
+  if (!seedFilePath) {
+    result.errors.push(
+      `Seed file not found. Checked: ${possiblePaths.join(", ")}`
+    );
     return result;
   }
 
