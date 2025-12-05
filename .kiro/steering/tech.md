@@ -1,49 +1,65 @@
-# Tech Stack & Build System
+---
+inclusion: always
+---
 
-## Core Technologies
+# Tech Stack & Development Guidelines
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **State Management**: React Query (@tanstack/react-query)
-- **Markdown**: remark + remark-gfm + remark-html
-- **Config Parsing**: yaml package for `nexus.config.yaml`
+## Core Stack
 
-## Common Commands
+- Next.js 14 (App Router) with TypeScript strict mode
+- Tailwind CSS for styling
+- Supabase (PostgreSQL) for database
+- React Query v5 (@tanstack/react-query) for server state
+- TipTap for WYSIWYG editing
+- remark ecosystem for Markdown processing
+- YAML config via `nexus.config.yaml`
+
+## TypeScript Rules
+
+- Strict mode enabled - always provide explicit types
+- Use `@/*` path alias for imports from `src/` (e.g., `import { Note } from '@/types'`)
+- Prefer interfaces over types for object shapes
+- Use `.tsx` extension only when JSX is present
+
+## Commands
 
 ```bash
-# Development
-npm run dev          # Start dev server at localhost:3000
-
-# Build & Production
-npm run build        # Production build
-npm start            # Start production server
-
-# Code Quality
-npm run lint         # ESLint
-npm run test         # Run tests with Vitest (single run)
-
-# Deployment
-vercel               # Deploy to Vercel
+npm run dev      # Dev server (localhost:3000)
+npm run build    # Production build
+npm run lint     # ESLint check
+npm run test     # Vitest single run (NOT watch mode)
+npm run seed     # Seed database
 ```
 
 ## Testing
 
-- **Framework**: Vitest
-- **Config**: `vitest.config.ts` with path aliases
-- **Test files**: Co-located in `__tests__` folders (e.g., `src/hooks/__tests__/`)
+- Framework: Vitest with node environment
+- Location: `__tests__/` folders adjacent to source (e.g., `src/hooks/__tests__/`)
+- Path aliases work in tests via `vitest.config.ts`
+- Always use `npm run test` (runs `vitest run`) - never use watch mode
 
 ## Environment Variables
 
-Required in `.env`:
+Required:
 
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY` - For server-side admin operations (optional)
-- `OPENAI_API_KEY` - For AI search (optional)
-- `NEXUS_PASSWORD` - Simple auth password (optional)
 
-## Path Aliases
+Optional:
 
-`@/*` maps to `./src/*` (configured in tsconfig.json)
+- `SUPABASE_SERVICE_ROLE_KEY` - Server-side admin operations
+- `OPENAI_API_KEY` - AI search feature
+- `NEXUS_PASSWORD` - Simple auth
+
+## API Routes
+
+- Use Next.js App Router conventions (`route.ts` files)
+- Dynamic routes use `[param]` folder naming
+- All database operations go through `src/lib/supabase.ts`
+
+## Dependencies to Know
+
+- `@tiptap/*` - Rich text editor components
+- `gray-matter` - YAML frontmatter parsing
+- `nanoid` - ID generation
+- `jszip` - Import/export functionality
