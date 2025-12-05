@@ -264,3 +264,27 @@
 .tiptap.prose-slate code {
   background: rgba(0, 0, 0, 0.08);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROSE (NoteViewer) CODE BLOCK STYLES
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Light theme prose code blocks - ensure text is visible */
+.prose pre,
+.prose-slate pre,
+[data-theme="light"] pre {
+  color: var(--color-text, #1f2328) !important;
+}
+
+.prose pre code,
+.prose-slate pre code,
+[data-theme="light"] pre code {
+  color: var(--color-text, #1f2328) !important;
+  background: transparent !important;
+}
+
+.prose pre code *,
+.prose-slate pre code *,
+[data-theme="light"] pre code * {
+  color: inherit !important;
+}
