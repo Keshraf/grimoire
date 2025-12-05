@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Open book symbol for Codex -->
+  <!-- Book spine -->
+  <path d="M50 20 L50 85" stroke="#0969da" stroke-width="2"/>
+  <!-- Left page -->
+  <path d="M50 20 Q30 18 15 25 L15 80 Q30 73 50 75" stroke="#0969da" stroke-width="2" fill="none"/>
+  <!-- Right page -->
+  <path d="M50 20 Q70 18 85 25 L85 80 Q70 73 50 75" stroke="#0969da" stroke-width="2" fill="none"/>
+  <!-- Left page lines -->
+  <line x1="25" y1="35" x2="45" y2="33" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="45" x2="45" y2="43" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="55" x2="45" y2="53" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="65" x2="40" y2="63" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <!-- Right page lines -->
+  <line x1="55" y1="33" x2="75" y2="35" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="55" y1="43" x2="75" y2="45" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="55" y1="53" x2="75" y2="55" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <line x1="55" y1="63" x2="70" y2="65" stroke="#0969da" stroke-width="1" opacity="0.6"/>
+  <!-- Outer circle frame -->
+  <circle cx="50" cy="50" r="45" stroke="#0969da" stroke-width="2" fill="none"/>
+  <!-- Inner circle accent -->
+  <circle cx="50" cy="50" r="40" stroke="#0969da" stroke-width="1" fill="none" opacity="0.3"/>
+</svg>

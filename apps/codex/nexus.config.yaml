@@ -1,0 +1,121 @@
+# ═══════════════════════════════════════════════════════════════════
+# CODEX - API Documentation Configuration
+# Professional documentation site with linear navigation
+# ═══════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────
+# Site Info
+# ─────────────────────────────────────────────────────────────────────
+site:
+  title: "Codex API Docs"
+  description: "Professional API documentation for developers"
+  logo: "/logos/codex.svg"
+  favicon: "/favicon.ico"
+
+# ─────────────────────────────────────────────────────────────────────
+# Mode: "documentation" for structured linear navigation
+# ─────────────────────────────────────────────────────────────────────
+mode: "documentation"
+
+# ─────────────────────────────────────────────────────────────────────
+# Theme - Light professional aesthetic
+# ─────────────────────────────────────────────────────────────────────
+theme:
+  preset: "light"
+
+  colors:
+    primary: "#2563eb"
+    secondary: "#dbeafe"
+    accent: "#3b82f6"
+    background: "#f8fafc"
+    surface: "#ffffff"
+    text: "#0f172a"
+    text_muted: "#64748b"
+
+  fonts:
+    heading: "Inter, sans-serif"
+    body: "Inter, sans-serif"
+    code: "JetBrains Mono, monospace"
+
+  custom_css: "./themes/codex.css"
+
+# ─────────────────────────────────────────────────────────────────────
+# Layout
+# ─────────────────────────────────────────────────────────────────────
+layout:
+  sidebar:
+    position: "left"
+    width: 280
+    collapsible: true
+
+  pane:
+    width: 720
+    min_width: 500
+    max_width: 900
+
+  graph:
+    position: "hidden"
+    height: 0
+    default_expanded: false
+
+# ─────────────────────────────────────────────────────────────────────
+# Features - Documentation-focused
+# ─────────────────────────────────────────────────────────────────────
+features:
+  local_graph: false
+  backlinks_panel: true
+  linear_nav: true
+  tags: true
+  search: true
+  ai_search: true
+  import_export: false
+  mcp_server: true
+
+# ─────────────────────────────────────────────────────────────────────
+# Navigation - Structured sections with ordered pages
+# ─────────────────────────────────────────────────────────────────────
+navigation:
+  sections:
+    - title: "Getting Started"
+      pages:
+        - "Introduction"
+        - "Installation"
+        - "Quick Start"
+    - title: "Authentication"
+      pages:
+        - "Authentication Overview"
+        - "OAuth 2.0"
+        - "API Keys"
+    - title: "API Reference"
+      pages:
+        - "Users API"
+        - "Posts API"
+        - "Comments API"
+    - title: "Guides"
+      pages:
+        - "Pagination"
+        - "Error Handling"
+        - "Rate Limiting"
+
+# ─────────────────────────────────────────────────────────────────────
+# Authentication - Public read access (no auth required)
+# ─────────────────────────────────────────────────────────────────────
+auth:
+  mode: "none"
+  permissions:
+    read: "public"
+    write: "authenticated"
+
+# ─────────────────────────────────────────────────────────────────────
+# Search
+# ─────────────────────────────────────────────────────────────────────
+search:
+  ai:
+    enabled: true
+    provider: gemini
+
+# ─────────────────────────────────────────────────────────────────────
+# MCP Server - Enabled for AI agent integration
+# ─────────────────────────────────────────────────────────────────────
+mcp:
+  enabled: true

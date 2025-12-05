@@ -1,0 +1,49 @@
+{
+  "name": "codex",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "next lint",
+    "seed": "npx tsx ../../scripts/seed.ts codex"
+  },
+  "dependencies": {
+    "@nexus/core": "*",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tanstack/react-query": "^5",
+    "@tiptap/extension-link": "^3.11.1",
+    "@tiptap/extension-placeholder": "^3.11.1",
+    "@tiptap/extension-table": "^3.12.1",
+    "@tiptap/extension-table-cell": "^3.12.1",
+    "@tiptap/extension-table-header": "^3.12.1",
+    "@tiptap/extension-table-row": "^3.12.1",
+    "@tiptap/pm": "^3.11.1",
+    "@tiptap/react": "^3.11.1",
+    "@tiptap/starter-kit": "^3.11.1",
+    "gray-matter": "^4.0.3",
+    "jszip": "^3.10.1",
+    "nanoid": "^5",
+    "next": "^14",
+    "react": "^18",
+    "react-dom": "^18",
+    "remark": "^15",
+    "remark-gfm": "^4",
+    "remark-html": "^16",
+    "remark-parse": "^11",
+    "tiptap-markdown": "^0.9.0",
+    "yaml": "^2"
+  },
+  "devDependencies": {
+    "@types/jszip": "^3.4.0",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "tailwindcss": "^3",
+    "typescript": "^5"
+  }
+}

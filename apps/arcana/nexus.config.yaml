@@ -1,0 +1,95 @@
+# ═══════════════════════════════════════════════════════════════════
+# ARCANA - Personal Knowledge Base Configuration
+# A mystical exploration of consciousness and creativity
+# ═══════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────
+# Site Info
+# ─────────────────────────────────────────────────────────────────────
+site:
+  title: "Arcana"
+  description: "A mystical knowledge base exploring consciousness and creativity"
+  logo: "/logos/arcana.svg"
+  favicon: "/favicon.ico"
+
+# ─────────────────────────────────────────────────────────────────────
+# Mode: "personal" for flat exploration
+# ─────────────────────────────────────────────────────────────────────
+mode: "personal"
+
+# ─────────────────────────────────────────────────────────────────────
+# Theme - Dark mystical aesthetic
+# ─────────────────────────────────────────────────────────────────────
+theme:
+  preset: "dark"
+
+  colors:
+    primary: "#9333ea"
+    secondary: "#1e1b4b"
+    accent: "#a855f7"
+    background: "#0c0a1d"
+    surface: "#1e1b4b"
+    text: "#e9d5ff"
+    text_muted: "#a78bfa"
+
+  fonts:
+    heading: "Cinzel, serif"
+    body: "Inter, sans-serif"
+    code: "JetBrains Mono, monospace"
+
+  custom_css: "./themes/arcana.css"
+
+# ─────────────────────────────────────────────────────────────────────
+# Layout
+# ─────────────────────────────────────────────────────────────────────
+layout:
+  sidebar:
+    position: "left"
+    width: 260
+    collapsible: true
+
+  pane:
+    width: 600
+    min_width: 400
+    max_width: 800
+
+  graph:
+    position: "bottom"
+    height: 200
+    default_expanded: true
+
+# ─────────────────────────────────────────────────────────────────────
+# Features - All enabled except AI search
+# ─────────────────────────────────────────────────────────────────────
+features:
+  local_graph: true
+  backlinks_panel: true
+  linear_nav: false
+  tags: true
+  search: true
+  ai_search: false
+  import_export: true
+  mcp_server: true
+  inline_editing: true
+
+# ─────────────────────────────────────────────────────────────────────
+# Authentication - Password mode for demo
+# ─────────────────────────────────────────────────────────────────────
+auth:
+  mode: "password"
+  permissions:
+    read: "public"
+    write: "authenticated"
+
+# ─────────────────────────────────────────────────────────────────────
+# Search
+# ─────────────────────────────────────────────────────────────────────
+search:
+  ai:
+    enabled: false
+
+# ─────────────────────────────────────────────────────────────────────
+# MCP Server
+# ─────────────────────────────────────────────────────────────────────
+mcp:
+  enabled: true

@@ -8,9 +8,22 @@
 
 A skeleton template for building knowledge bases that humans can explore naturally and AI agents can query programmatically.
 
-[Documentation](#getting-started)
+[Setup Guide](docs/SETUP_GUIDE.md) • [Project Value](docs/PROJECT_VALUE.md) • [Kiro Usage](docs/KIRO_USAGE.md)
 
 </div>
+
+---
+
+## 🎃 Kiroween Hackathon 2025
+
+**Category:** Skeleton Crew
+
+This project demonstrates how a single skeleton codebase can power vastly different applications:
+
+| Application               | Description                                       | Demo           |
+| ------------------------- | ------------------------------------------------- | -------------- |
+| **[Arcana](apps/arcana)** | Personal knowledge vault with dark mystical theme | [Live Demo](#) |
+| **[Codex](apps/codex)**   | API documentation with light professional theme   | [Live Demo](#) |
 
 ---
 
@@ -25,125 +38,59 @@ Knowledge is connected. But our tools force us to explore it in disconnected way
 | **Andy Matuschak's Notes** | Stacking panes, context preservation | Not open source, no linear mode, no AI integration            |
 | **Traditional Wikis**      | Linking                              | Ugly, no graphs, poor UX                                      |
 
-**None of them combine all three ways humans naturally explore knowledge:**
+**NEXUS combines all three ways humans naturally explore knowledge:**
 
 1. **Horizontal** — "Let me see this related thing, but keep my current context"
 2. **Linear** — "Walk me through this step by step"
 3. **Graphical** — "Show me how everything connects"
 
-And none of them are **AI-native** — you can't point Claude at your docs and ask questions.
-
----
-
-## The Solution
-
-NEXUS is a single template that gives you:
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  NEXUS                                                    [🔍 Ask]  │
-├──────────────┬──────────────────────────────────────────────────────┤
-│              │                                                      │
-│  📚 Notes    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-│              │  │ Note A      │  │ Note B      │  │ Note C      │  │
-│  • Conscious-│  │             │  │             │  │             │  │
-│    ness      │  │ Clicked     │  │ Clicked     │  │ Currently   │  │
-│  • Qualia    │  │ [[Note B]]  │◀─│ [[Note C]]  │◀─│ viewing     │  │
-│  • Free Will │  │             │  │             │  │             │  │
-│              │  │             │  │ Has backlink│  │ ┌─────────┐ │  │
-│  ──────────  │  │             │  │ to Note A   │  │ │ Graph   │ │  │
-│              │  │             │  │             │  │ │  ○──●   │ │  │
-│  🏷️ Tags     │  │             │  │             │  │ │   \│    │ │  │
-│  #philosophy │  │             │  │             │  │ │    ○    │ │  │
-│              │  │             │  │ [← Prev]    │  │ └─────────┘ │  │
-│              │  │             │  │ [Next →]    │  │ [← Prev]    │  │
-│              │  │             │  │             │  │ [Next →]    │  │
-│              │  └─────────────┘  └─────────────┘  └─────────────┘  │
-│              │                                                      │
-│              │  ← Horizontal scroll when more panes →               │
-└──────────────┴──────────────────────────────────────────────────────┘
-```
+And it's **AI-native** — point Claude at your docs and ask questions.
 
 ---
 
 ## Features
 
-### Three Navigation Modes
+- 🔗 **Obsidian-style `[[wikilinks]]`** with automatic backlinks
+- 📚 **Stacking panes** for context-preserving exploration
+- 📖 **Linear navigation** for sequential documentation
+- 🕸️ **Interactive graph** showing note connections
+- 🤖 **MCP Server** for AI agent integration
+- 🔍 **AI-powered search** with natural language queries
+- ✏️ **In-browser editing** with real-time saves
+- 🎨 **Configurable themes** via YAML
+- 🔐 **Flexible auth** (none, password, or Supabase)
 
-| Mode           | How It Works                                                           | Best For                                          |
-| -------------- | ---------------------------------------------------------------------- | ------------------------------------------------- |
-| **Horizontal** | Click `[[link]]` → new pane opens to the right, previous stays visible | Exploring connections while keeping context       |
-| **Linear**     | Previous/Next buttons navigate through ordered sequence                | Reading documentation step-by-step                |
-| **Graphical**  | Interactive node graph shows connections, click to navigate            | Discovering relationships, seeing the big picture |
+---
 
-### Obsidian-Style Linking
-
-```markdown
-This relates to [[Consciousness]] and [[Qualia|the hard problem]].
-```
-
-- **Forward links**: You create them by typing `[[Title]]`
-- **Backlinks**: Automatically detected — every note knows what links to it
-- **Autocomplete**: Type `[[` and get suggestions from existing notes
-
-### In-Browser Editing
-
-- Create and edit notes directly in the app
-- No markdown files to manage
-- `[[link]]` autocomplete as you type
-- Changes saved to database instantly
-
-### AI-Powered Search
+## Project Structure
 
 ```
-┌─────────────────────────────────────────┐
-│ 🔍 How do I refresh an OAuth token?    │
-├─────────────────────────────────────────┤
-│ 🤖 AI Answer                            │
-│                                         │
-│ To refresh an OAuth token, POST to      │
-│ /oauth/token with grant_type=refresh... │
-│                                         │
-│ Sources: OAuth 2.0, Token Management    │
-├─────────────────────────────────────────┤
-│ 📄 Related Pages                        │
-│ • OAuth 2.0                             │
-│ • Token Management                      │
-└─────────────────────────────────────────┘
+nexus/
+├── apps/
+│   ├── arcana/              # Personal knowledge base app
+│   │   ├── nexus.config.yaml
+│   │   ├── vercel.json
+│   │   └── src/
+│   └── codex/               # API documentation app
+│       ├── nexus.config.yaml
+│       ├── vercel.json
+│       └── src/
+├── packages/
+│   └── nexus-core/          # Shared skeleton code
+│       └── src/
+│           ├── components/
+│           ├── hooks/
+│           ├── lib/
+│           └── types/
+├── docs/
+│   ├── SETUP_GUIDE.md       # User-friendly setup instructions
+│   ├── PROJECT_VALUE.md     # Value proposition
+│   └── KIRO_USAGE.md        # How Kiro was used
+├── scripts/
+│   ├── setup-supabase.sql   # Database schema
+│   └── seed.ts              # Seeding script
+└── .kiro/                   # Kiro specs, hooks, and steering
 ```
-
-- **Keyword search**: Fast, works offline
-- **Natural language**: AI synthesizes answers from your content
-
-### MCP Server (AI-Native)
-
-Your deployed NEXUS becomes an MCP server that any AI can query:
-
-```json
-{
-  "mcpServers": {
-    "my-docs": {
-      "url": "https://docs.mycompany.com/api/mcp"
-    }
-  }
-}
-```
-
-Now Claude can:
-
-- List all your pages
-- Read specific pages with full content
-- Search your documentation
-- Answer questions using your content as context
-
-### Two Modes
-
-| Personal Mode             | Documentation Mode               |
-| ------------------------- | -------------------------------- |
-| Flat list of all notes    | Hierarchical TOC with sections   |
-| No linear navigation      | Prev/Next buttons enabled        |
-| Optimized for exploration | Optimized for sequential reading |
-| Great for personal wikis  | Great for company docs           |
 
 ---
 
@@ -152,9 +99,9 @@ Now Claude can:
 ### Prerequisites
 
 - Node.js 18+
-- A Supabase account (free tier works)
+- A [Supabase](https://supabase.com) account (free tier works)
 
-### 1. Clone
+### 1. Clone & Install
 
 ```bash
 git clone https://github.com/yourname/nexus.git
@@ -165,489 +112,137 @@ npm install
 ### 2. Set Up Supabase
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the contents of `/scripts/setup-supabase.sql`
+2. Run `scripts/setup-supabase.sql` in the SQL Editor
 3. Get your project URL and anon key from Settings → API
 
 ### 3. Configure Environment
 
 ```bash
-cp .env.example .env
+# For Arcana
+cp apps/arcana/.env.example apps/arcana/.env
+
+# For Codex
+cp apps/codex/.env.example apps/codex/.env
 ```
 
-Edit `.env`:
+Edit the `.env` files with your Supabase credentials.
 
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-NEXUS_PASSWORD=your-secret-password  # Optional: for simple auth
-OPENAI_API_KEY=sk-...                 # Optional: for AI search
-```
+### 4. Seed Sample Data
 
-### 4. Customize Config
-
-Edit `nexus.config.yaml`:
-
-```yaml
-site:
-  title: "My Knowledge Base"
-
-mode: "personal" # or "documentation"
-
-theme:
-  preset: "dark" # or "light"
+```bash
+npm run seed:arcana   # Personal knowledge example
+npm run seed:codex    # Documentation example
 ```
 
 ### 5. Run
 
 ```bash
-npm run dev
+npm run dev:arcana    # http://localhost:3001
+npm run dev:codex     # http://localhost:3002
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
-
-### 6. Deploy
-
-```bash
-vercel
-```
-
-Add environment variables in Vercel dashboard.
 
 ---
 
-## Configuration Reference
+## Configuration
 
-### `nexus.config.yaml`
+Each app is configured via `nexus.config.yaml`:
 
 ```yaml
-# ═══════════════════════════════════════════════════════════════════
-# SITE
-# ═══════════════════════════════════════════════════════════════════
 site:
   title: "My Knowledge Base"
   description: "Personal notes and documentation"
-  logo: "/logo.svg"
-  favicon: "/favicon.ico"
 
-# ═══════════════════════════════════════════════════════════════════
-# MODE
-# ═══════════════════════════════════════════════════════════════════
-# "personal" - All notes in sidebar, no linear nav, exploration-focused
-# "documentation" - Structured TOC, linear nav, sequential reading
-mode: "personal"
+mode: "personal" # or "documentation"
 
-# ═══════════════════════════════════════════════════════════════════
-# THEME
-# ═══════════════════════════════════════════════════════════════════
 theme:
-  preset: "dark" # "dark", "light", "system", or path to custom CSS
-
-  # Override specific colors
+  preset: "dark" # or "light"
   colors:
-    primary: "#7b2cbf"
-    background: "#0a0a0f"
-    text: "#e8e6e3"
+    primary: "#9333ea"
 
-  # Custom fonts
-  fonts:
-    heading: "Cinzel, serif"
-    body: "Inter, sans-serif"
-    code: "JetBrains Mono, monospace"
-
-  # Full custom CSS
-  custom_css: "./themes/my-theme.css"
-
-# ═══════════════════════════════════════════════════════════════════
-# LAYOUT
-# ═══════════════════════════════════════════════════════════════════
-layout:
-  sidebar:
-    position: "left" # "left", "right", "hidden"
-    width: 260
-    collapsible: true
-
-  pane:
-    width: 600
-    min_width: 400
-    max_width: 800
-
-  graph:
-    position: "bottom" # "bottom", "sidebar", "hidden"
-    height: 200
-    default_expanded: true
-
-# ═══════════════════════════════════════════════════════════════════
-# FEATURES
-# ═══════════════════════════════════════════════════════════════════
 features:
-  local_graph: true # Show connection graph in each pane
-  backlinks_panel: true # Show "N notes link here" panel
-  linear_nav: false # Prev/Next buttons (auto-enabled in docs mode)
-  tags: true # Enable tags
-  search: true # Enable search
-  ai_search: false # Natural language search (requires API key)
-  import_export: true # Import/export markdown files
-  mcp_server: true # Expose MCP endpoint for AI agents
+  local_graph: true
+  linear_nav: false
+  ai_search: false
+  mcp_server: true
 
-# ═══════════════════════════════════════════════════════════════════
-# NAVIGATION (Documentation mode only)
-# ═══════════════════════════════════════════════════════════════════
-navigation:
-  sections:
-    - title: "Getting Started"
-      pages:
-        - intro
-        - installation
-        - quick-start
-
-    - title: "API Reference"
-      pages:
-        - authentication
-        - endpoints
-        - errors
-
-# ═══════════════════════════════════════════════════════════════════
-# AUTHENTICATION
-# ═══════════════════════════════════════════════════════════════════
 auth:
-  mode: "password" # "none", "password", "supabase"
-
-  permissions:
-    read: "public" # "public" or "authenticated"
-    write: "authenticated"
-
-# ═══════════════════════════════════════════════════════════════════
-# SEARCH
-# ═══════════════════════════════════════════════════════════════════
-search:
-  ai:
-    enabled: false
-    provider: "openai" # "openai" or "anthropic"
-
-# ═══════════════════════════════════════════════════════════════════
-# MCP SERVER
-# ═══════════════════════════════════════════════════════════════════
-mcp:
-  enabled: true
+  mode: "password" # "none", "password", or "supabase"
 ```
 
----
-
-## Keyboard Shortcuts
-
-| Shortcut       | Action                                            |
-| -------------- | ------------------------------------------------- |
-| `Cmd/Ctrl + K` | Open search                                       |
-| `Cmd/Ctrl + N` | Create new note                                   |
-| `Cmd/Ctrl + S` | Save note (in edit mode)                          |
-| `Escape`       | Close search / Close rightmost pane / Cancel edit |
-| `Cmd/Ctrl + [` | Previous note (linear)                            |
-| `Cmd/Ctrl + ]` | Next note (linear)                                |
-| `←` `→`        | Navigate between panes                            |
-| `Cmd/Ctrl + \` | Toggle sidebar                                    |
+See the [full configuration reference](docs/SETUP_GUIDE.md#customizing-your-nexus) for all options.
 
 ---
 
-## URL Structure
+## Deployment
 
-NEXUS uses URL state to make stacks shareable:
+### Deploy to Vercel
 
-| State               | URL                                     |
-| ------------------- | --------------------------------------- |
-| Single note         | `/consciousness`                        |
-| Stacked notes       | `/consciousness?stack=qualia,free-will` |
-| With section anchor | `/consciousness?stack=qualia#section-1` |
-| Search              | `/?q=what+is+consciousness`             |
+Each app includes a `vercel.json` for one-click deployment:
 
-**Share a stack**: Copy the URL → friend sees the exact same panes open.
+1. Push to GitHub
+2. Import to Vercel
+3. Set **Root Directory** to `apps/arcana` or `apps/codex`
+4. Add environment variables
+5. Deploy
+
+See the [detailed deployment guide](docs/SETUP_GUIDE.md#step-5-deploy-to-vercel).
 
 ---
 
 ## MCP Integration
 
-When `mcp.enabled: true`, your deployment exposes `/api/mcp` with these tools:
-
-### Available Tools
-
-| Tool              | Description                                      |
-| ----------------- | ------------------------------------------------ |
-| `list_pages`      | Get all page slugs and titles                    |
-| `get_page`        | Get full content, outlinks, backlinks for a page |
-| `search`          | Search pages by keyword                          |
-| `ask`             | Ask a natural language question (if AI enabled)  |
-| `get_connections` | Get graph data for a page                        |
-
-### Claude Desktop Setup
+When `mcp.enabled: true`, your deployment exposes `/api/mcp`:
 
 ```json
 {
   "mcpServers": {
-    "my-knowledge-base": {
-      "url": "https://your-site.vercel.app/api/mcp"
+    "my-docs": {
+      "url": "https://your-app.vercel.app/api/mcp"
     }
   }
 }
 ```
 
-### Example Queries
+**Available Tools:**
 
-Once connected, ask Claude:
-
-- "What pages are in my knowledge base?"
-- "Summarize the OAuth documentation"
-- "What links to the Authentication page?"
-- "How do I handle token refresh based on my docs?"
-
----
-
-## Import & Export
-
-### Importing Markdown Files
-
-1. Click the import button in sidebar
-2. Drag and drop `.md` files
-3. NEXUS parses:
-   - Frontmatter (title, tags)
-   - `[[links]]` in content
-4. Files are added to database
-
-**Supported frontmatter:**
-
-```yaml
----
-title: "My Note Title"
-tags: [philosophy, consciousness]
-order: 5 # For linear navigation
-section: "Basics" # For documentation grouping
----
-```
-
-### Exporting
-
-- Click export to download all notes as a `.zip` of markdown files
-- Frontmatter is preserved
-- Use for backups or migrating to Obsidian
-
----
-
-## Database Schema
-
-NEXUS uses Supabase (PostgreSQL) with this schema:
-
-```sql
--- Notes
-CREATE TABLE notes (
-  id UUID PRIMARY KEY,
-  title TEXT UNIQUE NOT NULL,
-  content TEXT NOT NULL,
-  tags TEXT[],
-  section TEXT,
-  "order" INTEGER,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
-);
-
--- Links (for fast backlink queries)
-CREATE TABLE links (
-  source_title TEXT REFERENCES notes(title),
-  target_title TEXT,
-  UNIQUE(source_title, target_title)
-);
-
--- Full-text search
-ALTER TABLE notes ADD COLUMN fts tsvector
-  GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || content)) STORED;
-```
-
----
-
-## Customization
-
-### Custom Theme
-
-Create `/themes/my-theme.css`:
-
-```css
-:root {
-  --nexus-primary: #7b2cbf;
-  --nexus-background: #0a0a0f;
-  --nexus-surface: #16213e;
-  --nexus-text: #e8e6e3;
-  --nexus-text-muted: #a8a6a3;
-  --nexus-border: #2a2a3e;
-  --nexus-accent: #c77dff;
-}
-
-/* Custom styles */
-.pane {
-  border-left: 2px solid var(--nexus-accent);
-}
-
-.graph-node {
-  fill: var(--nexus-primary);
-}
-```
-
-Reference in config:
-
-```yaml
-theme:
-  custom_css: "./themes/my-theme.css"
-```
-
-### Custom Fonts
-
-```yaml
-theme:
-  fonts:
-    heading: "'Playfair Display', serif"
-    body: "'Source Sans Pro', sans-serif"
-    code: "'Fira Code', monospace"
-```
-
-Add font imports to `custom_css` or include via Google Fonts.
-
----
-
-## Examples
-
-### Arcana — Personal Knowledge Vault
-
-A dark, mystical theme for personal notes on philosophy and creativity.
-
-**Config highlights:**
-
-```yaml
-mode: "personal"
-theme:
-  preset: "dark"
-  colors:
-    primary: "#9d4edd"
-    background: "#0a0a0f"
-features:
-  local_graph: true
-  linear_nav: false
-```
-
-### Codex — API Documentation
-
-A clean, professional theme for technical documentation.
-
-**Config highlights:**
-
-```yaml
-mode: "documentation"
-theme:
-  preset: "light"
-  colors:
-    primary: "#0366d6"
-features:
-  linear_nav: true
-  mcp_server: true
-navigation:
-  sections:
-    - title: "Getting Started"
-      pages: [intro, installation, quick-start]
-```
-
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                         BROWSER                              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │  Sidebar  │  Pane 1  │  Pane 2  │  Pane 3  │ ...       │  │
-│  │           │  (view)  │  (view)  │  (edit)  │           │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                     NEXT.js API                              │
-│  /api/notes • /api/search • /api/mcp • /api/auth             │
-└──────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                       SUPABASE                               │
-│  PostgreSQL • Full-text search • Auth • Real-time            │
-└──────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Tech Stack
-
-| Layer      | Technology                               |
-| ---------- | ---------------------------------------- |
-| Framework  | Next.js 14 (App Router)                  |
-| Language   | TypeScript                               |
-| Styling    | Tailwind CSS                             |
-| Database   | Supabase (PostgreSQL)                    |
-| Auth       | Supabase Auth or simple password         |
-| Search     | PostgreSQL full-text + OpenAI (optional) |
-| Deployment | Vercel                                   |
+- `list_pages` — Get all page titles
+- `get_page` — Get content, outlinks, backlinks
+- `search` — Search by keyword
+- `ask` — Natural language questions (if AI enabled)
 
 ---
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Type check
-npm run typecheck
-
-# Lint
-npm run lint
-
-# Build for production
-npm run build
-
-# Seed example data
-npm run seed:arcana   # Personal knowledge example
-npm run seed:codex    # Documentation example
+npm run dev:arcana     # Run Arcana dev server
+npm run dev:codex      # Run Codex dev server
+npm run build:all      # Build all packages and apps
+npm run lint           # Lint all apps
+npm run test           # Run tests
 ```
 
 ---
 
-## Project Structure
+## Documentation
 
-```
-/nexus
-├── nexus.config.yaml        # Main configuration
-├── /src
-│   ├── /app                 # Next.js App Router
-│   │   ├── /api             # API routes
-│   │   │   ├── /notes       # CRUD for notes
-│   │   │   ├── /search      # Search endpoint
-│   │   │   ├── /mcp         # MCP server
-│   │   │   └── /auth        # Authentication
-│   │   └── page.tsx         # Main app
-│   ├── /components          # React components
-│   ├── /hooks               # Custom hooks
-│   ├── /lib                 # Utilities
-│   └── /types               # TypeScript types
-├── /themes                  # Custom themes
-├── /examples                # Example configurations
-└── /scripts                 # Setup and seed scripts
-```
+- **[Setup Guide](docs/SETUP_GUIDE.md)** — Step-by-step instructions for non-developers
+- **[Project Value](docs/PROJECT_VALUE.md)** — Why NEXUS exists and what makes it unique
+- **[Kiro Usage](docs/KIRO_USAGE.md)** — How Kiro was used to build this project
 
 ---
 
-## Contributing
+## Tech Stack
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+| Layer      | Technology              |
+| ---------- | ----------------------- |
+| Framework  | Next.js 14 (App Router) |
+| Language   | TypeScript              |
+| Styling    | Tailwind CSS            |
+| Database   | Supabase (PostgreSQL)   |
+| Editor     | TipTap                  |
+| State      | React Query v5          |
+| Deployment | Vercel                  |
 
 ---
 
@@ -659,9 +254,9 @@ MIT License — use it for anything.
 
 ## Acknowledgments
 
+- **Kiro** — for making AI-assisted development a joy
 - **Andy Matuschak** — for pioneering the stacking notes pattern
 - **Obsidian** — for proving that `[[linking]]` works
-- **Reflect** — for open-sourcing the [Beginning of Infinity](https://github.com/team-reflect/beginning-of-infinity) implementation
 
 ---
 
@@ -672,5 +267,7 @@ MIT License — use it for anything.
 _Skeleton Crew Category_
 
 Three ways to explore. One template to build.
+
+🎃 👻 🦇
 
 </div>

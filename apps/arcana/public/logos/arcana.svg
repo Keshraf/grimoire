@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Mystical eye symbol for Arcana -->
+  <circle cx="50" cy="50" r="45" stroke="#9333ea" stroke-width="2" fill="none"/>
+  <circle cx="50" cy="50" r="35" stroke="#a855f7" stroke-width="1.5" fill="none"/>
+  <!-- Inner eye -->
+  <ellipse cx="50" cy="50" rx="25" ry="15" stroke="#9333ea" stroke-width="2" fill="none"/>
+  <circle cx="50" cy="50" r="8" fill="#9333ea"/>
+  <circle cx="50" cy="50" r="4" fill="#e9d5ff"/>
+  <!-- Rays -->
+  <line x1="50" y1="5" x2="50" y2="15" stroke="#a855f7" stroke-width="1.5"/>
+  <line x1="50" y1="85" x2="50" y2="95" stroke="#a855f7" stroke-width="1.5"/>
+  <line x1="5" y1="50" x2="15" y2="50" stroke="#a855f7" stroke-width="1.5"/>
+  <line x1="85" y1="50" x2="95" y2="50" stroke="#a855f7" stroke-width="1.5"/>
+  <!-- Diagonal rays -->
+  <line x1="15" y1="15" x2="22" y2="22" stroke="#a855f7" stroke-width="1"/>
+  <line x1="85" y1="15" x2="78" y2="22" stroke="#a855f7" stroke-width="1"/>
+  <line x1="15" y1="85" x2="22" y2="78" stroke="#a855f7" stroke-width="1"/>
+  <line x1="85" y1="85" x2="78" y2="78" stroke="#a855f7" stroke-width="1"/>
+</svg>
