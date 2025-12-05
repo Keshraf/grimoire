@@ -151,7 +151,7 @@ export interface NexusConfig {
   search: {
     ai?: {
       enabled: boolean;
-      provider?: "openai" | "anthropic";
+      provider?: "openai" | "anthropic" | "gemini";
     };
   };
   mcp?: {

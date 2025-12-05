@@ -1,7 +1,7 @@
 import type { Note, AISearchResult, SearchResult } from "@/types";
 
 export interface AISearchOptions {
-  provider: "openai" | "anthropic";
+  provider: "openai" | "anthropic" | "gemini";
   apiKey: string;
   maxTokens?: number;
 }
@@ -52,6 +52,8 @@ export async function aiSearch(
 
     if (provider === "openai") {
       answer = await callOpenAI(systemPrompt, question, apiKey, maxTokens);
+    } else if (provider === "gemini") {
+      answer = await callGemini(systemPrompt, question, apiKey, maxTokens);
     } else {
       answer = await callAnthropic(systemPrompt, question, apiKey, maxTokens);
     }
@@ -130,4 +132,43 @@ async function callAnthropic(
 
   const data = await response.json();
   return data.content[0]?.text || "No response generated.";
+}
+
+async function callGemini(
+  systemPrompt: string,
+  question: string,
+  apiKey: string,
+  maxTokens: number
+): Promise<string> {
+  const model = "gemini-2.0-flash-lite";
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: `${systemPrompt}\n\nQuestion: ${question}` }],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: maxTokens,
+          temperature: 0.3,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return (
+    data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated."
+  );
 }

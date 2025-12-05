@@ -24,8 +24,7 @@ const manifest: MCPManifest = {
   tools: [
     {
       name: "list_pages",
-      description:
-        "List all pages in the knowledge base with their titles",
+      description: "List all pages in the knowledge base with their titles",
       inputSchema: {
         type: "object",
         properties: {},
@@ -193,7 +192,15 @@ async function handleAsk(input: { question: string }): Promise<AskToolResult> {
   const { question } = input;
   const config = getConfig();
   const aiEnabled = config.features.ai_search && config.search?.ai?.enabled;
-  const apiKey = process.env.OPENAI_API_KEY;
+  const provider = config.search?.ai?.provider || "openai";
+
+  // Get the appropriate API key based on provider
+  const apiKey =
+    provider === "gemini"
+      ? process.env.GEMINI_API_KEY
+      : provider === "anthropic"
+      ? process.env.ANTHROPIC_API_KEY
+      : process.env.OPENAI_API_KEY;
 
   if (!aiEnabled || !apiKey) {
     throw { status: 503, message: "AI search is not available" };
@@ -201,11 +208,38 @@ async function handleAsk(input: { question: string }): Promise<AskToolResult> {
 
   const supabase = await createClient();
 
-  // Search for relevant notes
+  // Search for relevant notes - extract keywords from question
+  const keywords = question
+    .toLowerCase()
+    .replace(/[?.,!]/g, "")
+    .split(/\s+/)
+    .filter(
+      (w) =>
+        w.length > 3 &&
+        ![
+          "what",
+          "how",
+          "does",
+          "the",
+          "this",
+          "that",
+          "with",
+          "from",
+          "have",
+          "about",
+        ].includes(w)
+    );
+
+  // Build OR conditions for each keyword
+  const searchTerms = keywords.length > 0 ? keywords : [question];
+  const orConditions = searchTerms
+    .map((term) => `title.ilike.%${term}%,content.ilike.%${term}%`)
+    .join(",");
+
   const { data: notes, error } = await supabase
     .from("notes")
     .select("*")
-    .or(`title.ilike.%${question}%,content.ilike.%${question}%`)
+    .or(orConditions)
     .limit(5);
 
   if (error) {
@@ -219,7 +253,6 @@ async function handleAsk(input: { question: string }): Promise<AskToolResult> {
     };
   }
 
-  const provider = config.search?.ai?.provider || "openai";
   const result = await aiSearch(question, notes as Note[], {
     provider,
     apiKey,

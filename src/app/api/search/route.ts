@@ -26,11 +26,38 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Use Supabase full-text search
+    // Extract keywords from query for better matching
+    const keywords = searchQuery
+      .toLowerCase()
+      .replace(/[?.,!]/g, "")
+      .split(/\s+/)
+      .filter(
+        (w) =>
+          w.length > 3 &&
+          ![
+            "what",
+            "how",
+            "does",
+            "the",
+            "this",
+            "that",
+            "with",
+            "from",
+            "have",
+            "about",
+          ].includes(w)
+      );
+
+    // Build OR conditions for each keyword
+    const searchTerms = keywords.length > 0 ? keywords : [searchQuery];
+    const orConditions = searchTerms
+      .map((term) => `title.ilike.%${term}%,content.ilike.%${term}%`)
+      .join(",");
+
     const { data: notes, error } = await supabase
       .from("notes")
       .select("title, content")
-      .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+      .or(orConditions)
       .limit(20);
 
     if (error) {
@@ -84,7 +111,15 @@ export async function POST(request: NextRequest) {
     if (includeAI) {
       const config = getConfig();
       const aiEnabled = config.features.ai_search && config.search?.ai?.enabled;
-      const apiKey = process.env.OPENAI_API_KEY;
+      const provider = config.search?.ai?.provider || "openai";
+
+      // Get the appropriate API key based on provider
+      const apiKey =
+        provider === "gemini"
+          ? process.env.GEMINI_API_KEY
+          : provider === "anthropic"
+          ? process.env.ANTHROPIC_API_KEY
+          : process.env.OPENAI_API_KEY;
 
       if (aiEnabled && apiKey && results.length > 0) {
         try {
@@ -96,7 +131,6 @@ export async function POST(request: NextRequest) {
             .in("title", titles);
 
           if (fullNotes && fullNotes.length > 0) {
-            const provider = config.search?.ai?.provider || "openai";
             aiAnswer = await aiSearch(searchQuery, fullNotes, {
               provider,
               apiKey,

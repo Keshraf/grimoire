@@ -18,19 +18,19 @@ site:
 mode: "documentation"
 
 # ─────────────────────────────────────────────────────────────────────
-# Theme - Clean modern documentation aesthetic
+# Theme - Light professional aesthetic
 # ─────────────────────────────────────────────────────────────────────
 theme:
   preset: "light"
 
   colors:
-    primary: "#0969da"
-    secondary: "#f6f8fa"
-    accent: "#0969da"
-    background: "#ffffff"
-    surface: "#f6f8fa"
-    text: "#1f2328"
-    text_muted: "#656d76"
+    primary: "#2563eb"
+    secondary: "#dbeafe"
+    accent: "#3b82f6"
+    background: "#f8fafc"
+    surface: "#ffffff"
+    text: "#0f172a"
+    text_muted: "#64748b"
 
   fonts:
     heading: "Inter, sans-serif"
@@ -67,7 +67,7 @@ features:
   linear_nav: true
   tags: true
   search: true
-  ai_search: false
+  ai_search: true
   import_export: false
   mcp_server: true
 
@@ -111,7 +111,8 @@ auth:
 # ─────────────────────────────────────────────────────────────────────
 search:
   ai:
-    enabled: false
+    enabled: true
+    provider: gemini
 
 # ─────────────────────────────────────────────────────────────────────
 # MCP Server - Enabled for AI agent integration
