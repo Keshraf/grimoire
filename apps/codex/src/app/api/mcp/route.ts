@@ -90,9 +90,21 @@ const manifest: MCPManifest = {
   ],
 };
 
+// CORS headers for mcp-remote proxy
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+// OPTIONS handler for CORS preflight
+export async function OPTIONS(): Promise<NextResponse> {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 // GET handler - returns MCP manifest
 export async function GET(): Promise<NextResponse<MCPManifest>> {
-  return NextResponse.json(manifest);
+  return NextResponse.json(manifest, { headers: corsHeaders });
 }
 
 // Tool handlers
@@ -307,6 +319,11 @@ async function handleGetConnections(input: {
   };
 }
 
+// Helper to create JSON response with CORS headers
+function jsonResponse<T>(data: T, status = 200): NextResponse<T> {
+  return NextResponse.json(data, { status, headers: corsHeaders });
+}
+
 // POST handler - invokes tools
 export async function POST(
   request: NextRequest
@@ -316,14 +333,11 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
   if (!body.tool || typeof body.tool !== "string") {
-    return NextResponse.json(
-      { error: "Missing 'tool' field" },
-      { status: 400 }
-    );
+    return jsonResponse({ error: "Missing 'tool' field" }, 400);
   }
 
   const toolName = body.tool;
@@ -333,73 +347,64 @@ export async function POST(
     switch (toolName) {
       case "list_pages": {
         const result = await handleListPages();
-        return NextResponse.json({ result });
+        return jsonResponse({ result });
       }
 
       case "get_page": {
         if (!input.title || typeof input.title !== "string") {
-          return NextResponse.json(
+          return jsonResponse(
             { error: "Missing required parameter: title" },
-            { status: 400 }
+            400
           );
         }
         const result = await handleGetPage({ title: input.title as string });
-        return NextResponse.json({ result });
+        return jsonResponse({ result });
       }
 
       case "search": {
         if (!input.query || typeof input.query !== "string") {
-          return NextResponse.json(
+          return jsonResponse(
             { error: "Missing required parameter: query" },
-            { status: 400 }
+            400
           );
         }
         const result = await handleSearch({ query: input.query as string });
-        return NextResponse.json({ result });
+        return jsonResponse({ result });
       }
 
       case "ask": {
         if (!input.question || typeof input.question !== "string") {
-          return NextResponse.json(
+          return jsonResponse(
             { error: "Missing required parameter: question" },
-            { status: 400 }
+            400
           );
         }
         const result = await handleAsk({ question: input.question as string });
-        return NextResponse.json({ result });
+        return jsonResponse({ result });
       }
 
       case "get_connections": {
         if (!input.title || typeof input.title !== "string") {
-          return NextResponse.json(
+          return jsonResponse(
             { error: "Missing required parameter: title" },
-            { status: 400 }
+            400
           );
         }
         const result = await handleGetConnections({
           title: input.title as string,
         });
-        return NextResponse.json({ result });
+        return jsonResponse({ result });
       }
 
       default:
-        return NextResponse.json(
-          { error: `Unknown tool: ${toolName}` },
-          { status: 400 }
-        );
+        return jsonResponse({ error: `Unknown tool: ${toolName}` }, 400);
     }
   } catch (err: unknown) {
     if (err && typeof err === "object" && "status" in err && "message" in err) {
       const typedErr = err as { status: number; message: string };
-      return NextResponse.json(
-        { error: typedErr.message },
-        { status: typedErr.status }
-      );
+      return jsonResponse({ error: typedErr.message }, typedErr.status);
     }
     console.error("MCP tool error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 }

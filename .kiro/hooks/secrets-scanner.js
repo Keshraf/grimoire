@@ -6,9 +6,12 @@ const fs = require("fs");
 // Patterns to detect potential secrets
 const SECRET_PATTERNS = [
   { name: "OpenAI API Key", pattern: /sk-[a-zA-Z0-9]{20,}/g },
-  { name: "Context7 API Key", pattern: /ctx7sk-[a-zA-Z0-9]{20,}/g },
-  { name: "Stripe Key", pattern: /pk_(?:live|test)_[a-zA-Z0-9]{20,}/g },
-  { name: "Stripe Secret", pattern: /sk_(?:live|test)_[a-zA-Z0-9]{20,}/g },
+  { name: "Context7 API Key", pattern: /ctx7sk-[a-zA-Z0-9\-]{20,}/g },
+  {
+    name: "Stripe Publishable Key",
+    pattern: /pk_(?:live|test)_[a-zA-Z0-9]{20,}/g,
+  },
+  { name: "Stripe Secret Key", pattern: /sk_(?:live|test)_[a-zA-Z0-9]{20,}/g },
   { name: "AWS Access Key", pattern: /AKIA[0-9A-Z]{16}/g },
   {
     name: "Generic API Key",
@@ -26,8 +29,8 @@ const SECRET_PATTERNS = [
       /(?:token|auth_token|access_token)\s*[=:]\s*['"]?([a-zA-Z0-9_\-]{16,})['"]?/gi,
   },
   {
-    name: "Base64 Encoded (long)",
-    pattern: /['"][A-Za-z0-9+/]{40,}={0,2}['"]/g,
+    name: "Base64 Encoded (32+ chars)",
+    pattern: /['"][A-Za-z0-9+/]{32,}={0,2}['"]/g,
   },
   {
     name: "JWT Token",
