@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import type { Note, NoteWithLinks, NexusConfig } from "@/types";
+import { useAuth } from "@/hooks";
 import { PaneHeader } from "./PaneHeader";
-import { InlineNoteEditor } from "./InlineNoteEditor";
+import { WysiwygEditor } from "./WysiwygEditor";
 import { NoteViewer } from "./NoteViewer";
 import { BacklinksPanel } from "./BacklinksPanel";
 import { LinearNav } from "./LinearNav";
@@ -93,6 +94,7 @@ export function Pane({
   onDelete,
   onExpandPane,
 }: PaneProps) {
+  const { canWrite } = useAuth();
   const [graphExpanded, setGraphExpanded] = useState(
     config.layout.graph?.default_expanded ?? true
   );
@@ -179,10 +181,9 @@ export function Pane({
         {/* Scrollable content area */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div>
-            {config.features.inline_editing ? (
-              <InlineNoteEditor
+            {config.features.inline_editing && canWrite ? (
+              <WysiwygEditor
                 content={note.content}
-                html={note.html}
                 config={config}
                 notes={allNotes}
                 onSave={onSave}

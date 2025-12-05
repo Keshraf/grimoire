@@ -283,8 +283,8 @@ function SidebarActions({
         </button>
       )}
 
-      {/* Show New Note only if user can write */}
-      {canWrite && (
+      {/* Show New Note only if inline editing is enabled AND user can write */}
+      {config.features.inline_editing && canWrite && (
         <button
           onClick={onNewNote}
           className="w-full flex items-center gap-2 px-3 py-2 rounded text-sm hover:bg-white/10 transition-colors"

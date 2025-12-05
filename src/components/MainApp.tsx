@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { NexusConfig } from "@/types";
 import { DEFAULT_CONFIG } from "@/lib/config.defaults";
 import {
@@ -21,6 +22,7 @@ import { SearchModal } from "./SearchModal";
  * Layout, StackContainer, and SearchModal components.
  */
 export function MainApp() {
+  const router = useRouter();
   const [config, setConfig] = useState<NexusConfig>(DEFAULT_CONFIG);
   const [configLoading, setConfigLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -32,8 +34,13 @@ export function MainApp() {
     isLoading: notesLoading,
     error: notesError,
   } = useNotes();
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, authMode } = useAuth();
   const createNoteMutation = useCreateNote();
+
+  // Determine if auth is required for reading content
+  const requiresAuthForRead =
+    (authMode === "password" || authMode === "supabase") &&
+    config.auth?.permissions?.read === "authenticated";
 
   // Sync navigation state with URL
   useURLSync();
@@ -71,7 +78,10 @@ export function MainApp() {
     }
 
     // Find home or index note, otherwise use first note
-    const homeNote = notes.find((n) => n.title.toLowerCase() === "home" || n.title.toLowerCase() === "index");
+    const homeNote = notes.find(
+      (n) =>
+        n.title.toLowerCase() === "home" || n.title.toLowerCase() === "index"
+    );
     const initialTitle = homeNote?.title || notes[0]?.title;
 
     if (initialTitle) {
@@ -135,6 +145,18 @@ export function MainApp() {
       <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-background,#0a0a0f)]">
         <div className="text-[var(--color-text-muted,#a8a6a3)] animate-pulse">
           Loading...
+        </div>
+      </div>
+    );
+  }
+
+  // Auth gate: redirect to login if auth is required but user is not authenticated
+  if (requiresAuthForRead && !isAuthenticated) {
+    router.push("/auth");
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[var(--color-background,#0a0a0f)]">
+        <div className="text-[var(--color-text-muted,#a8a6a3)] animate-pulse">
+          Redirecting to login...
         </div>
       </div>
     );

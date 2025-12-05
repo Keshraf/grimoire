@@ -1,43 +1,43 @@
 # ═══════════════════════════════════════════════════════════════════
-# CODEX - API Documentation Configuration
-# Professional documentation site with linear navigation
+# ARCANA - Personal Knowledge Base Configuration
+# A mystical exploration of consciousness and creativity
 # ═══════════════════════════════════════════════════════════════════
 
 # ─────────────────────────────────────────────────────────────────────
 # Site Info
 # ─────────────────────────────────────────────────────────────────────
 site:
-  title: "Codex API Docs"
-  description: "Professional API documentation for developers"
-  logo: "/logos/codex.svg"
+  title: "Arcana"
+  description: "A mystical knowledge base exploring consciousness and creativity"
+  logo: "/logos/arcana.svg"
   favicon: "/favicon.ico"
 
 # ─────────────────────────────────────────────────────────────────────
-# Mode: "documentation" for structured linear navigation
+# Mode: "personal" for flat exploration
 # ─────────────────────────────────────────────────────────────────────
-mode: "documentation"
+mode: "personal"
 
 # ─────────────────────────────────────────────────────────────────────
-# Theme - Light professional aesthetic
+# Theme - Dark mystical aesthetic
 # ─────────────────────────────────────────────────────────────────────
 theme:
-  preset: "light"
+  preset: "dark"
 
   colors:
-    primary: "#2563eb"
-    secondary: "#dbeafe"
-    accent: "#3b82f6"
-    background: "#f8fafc"
-    surface: "#ffffff"
-    text: "#0f172a"
-    text_muted: "#64748b"
+    primary: "#9333ea"
+    secondary: "#1e1b4b"
+    accent: "#a855f7"
+    background: "#0c0a1d"
+    surface: "#1e1b4b"
+    text: "#e9d5ff"
+    text_muted: "#a78bfa"
 
   fonts:
-    heading: "Inter, sans-serif"
+    heading: "Cinzel, serif"
     body: "Inter, sans-serif"
     code: "JetBrains Mono, monospace"
 
-  custom_css: "./themes/codex.css"
+  custom_css: "./themes/arcana.css"
 
 # ─────────────────────────────────────────────────────────────────────
 # Layout
@@ -45,63 +45,38 @@ theme:
 layout:
   sidebar:
     position: "left"
-    width: 280
+    width: 260
     collapsible: true
 
   pane:
-    width: 720
-    min_width: 500
-    max_width: 900
+    width: 600
+    min_width: 400
+    max_width: 800
 
   graph:
-    position: "hidden"
-    height: 0
-    default_expanded: false
+    position: "bottom"
+    height: 200
+    default_expanded: true
 
 # ─────────────────────────────────────────────────────────────────────
-# Features - Documentation-focused
+# Features - All enabled except AI search
 # ─────────────────────────────────────────────────────────────────────
 features:
-  local_graph: false
+  local_graph: true
   backlinks_panel: true
-  linear_nav: true
+  linear_nav: false
   tags: true
   search: true
-  ai_search: true
-  import_export: false
+  ai_search: false
+  import_export: true
   mcp_server: true
+  inline_editing: true
 
 # ─────────────────────────────────────────────────────────────────────
-# Navigation - Structured sections with ordered pages
-# ─────────────────────────────────────────────────────────────────────
-navigation:
-  sections:
-    - title: "Getting Started"
-      pages:
-        - "Introduction"
-        - "Installation"
-        - "Quick Start"
-    - title: "Authentication"
-      pages:
-        - "Authentication Overview"
-        - "OAuth 2.0"
-        - "API Keys"
-    - title: "API Reference"
-      pages:
-        - "Users API"
-        - "Posts API"
-        - "Comments API"
-    - title: "Guides"
-      pages:
-        - "Pagination"
-        - "Error Handling"
-        - "Rate Limiting"
-
-# ─────────────────────────────────────────────────────────────────────
-# Authentication - Public read access (no auth required)
+# Authentication - Password mode for demo
 # ─────────────────────────────────────────────────────────────────────
 auth:
-  mode: "none"
+  mode: "password"
   permissions:
     read: "public"
     write: "authenticated"
@@ -111,11 +86,10 @@ auth:
 # ─────────────────────────────────────────────────────────────────────
 search:
   ai:
-    enabled: true
-    provider: gemini
+    enabled: false
 
 # ─────────────────────────────────────────────────────────────────────
-# MCP Server - Enabled for AI agent integration
+# MCP Server
 # ─────────────────────────────────────────────────────────────────────
 mcp:
   enabled: true
