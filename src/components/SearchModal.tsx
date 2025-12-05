@@ -97,34 +97,53 @@ export function SearchModal({
     }, 300);
   };
 
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (results[selectedIndex]) {
-          handleSelect(results[selectedIndex].title);
-        }
-        break;
-      case "Escape":
-        e.preventDefault();
-        onClose();
-        break;
-    }
-  };
+  const handleSelect = useCallback(
+    (title: string) => {
+      onSelect(title);
+      onClose();
+    },
+    [onSelect, onClose]
+  );
 
-  const handleSelect = (title: string) => {
-    onSelect(title);
-    onClose();
-  };
+  // Keyboard navigation - handled at container level like cmdk
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // Skip if IME composition is in progress
+      if (e.nativeEvent.isComposing) return;
+
+      switch (e.key) {
+        case "ArrowDown":
+        case "n":
+          // Support Ctrl+N for vim-style navigation
+          if (e.key === "n" && !e.ctrlKey) break;
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < results.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case "ArrowUp":
+        case "p":
+          // Support Ctrl+P for vim-style navigation
+          if (e.key === "p" && !e.ctrlKey) break;
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : results.length - 1
+          );
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (results[selectedIndex]) {
+            handleSelect(results[selectedIndex].title);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          onClose();
+          break;
+      }
+    },
+    [results, selectedIndex, handleSelect, onClose]
+  );
 
   // Scroll selected item into view
   useEffect(() => {
@@ -149,11 +168,12 @@ export function SearchModal({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      {/* Modal */}
+      {/* Modal - handles keyboard navigation at root level like cmdk */}
       <div
         className="relative w-full max-w-2xl mx-4 bg-[var(--color-surface,#16213e)] rounded-xl shadow-2xl border border-white/10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
+        tabIndex={-1}
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
@@ -163,7 +183,6 @@ export function SearchModal({
             type="text"
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="Search notes..."
             className="flex-1 bg-transparent text-[var(--color-text,#e8e6e3)] placeholder-[var(--color-text-muted,#a8a6a3)] outline-none text-lg"
             aria-label="Search notes"
@@ -229,8 +248,8 @@ export function SearchModal({
                   onClick={() => handleSelect(result.title)}
                   className={`w-full px-4 py-3 text-left transition-colors ${
                     index === selectedIndex
-                      ? "bg-[var(--color-primary,#7b2cbf)]/20"
-                      : "hover:bg-white/5"
+                      ? "bg-[var(--color-primary,#7b2cbf)]/40 border-l-2 border-[var(--color-accent,#c77dff)]"
+                      : "hover:bg-white/5 border-l-2 border-transparent"
                   }`}
                 >
                   <div className="font-medium text-[var(--color-text,#e8e6e3)]">
