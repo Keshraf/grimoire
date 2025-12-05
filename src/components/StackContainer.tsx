@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { useNavigation } from "@/hooks/useNavigation";
 import { useNotes, useNote, useUpdateNote, useCreateNote, useDeleteNote } from "@/hooks/useNotes";
 import type { NexusConfig } from "@/types";
 import { Pane } from "./Pane";
+
+const COLLAPSED_WIDTH = 40;
 
 /**
  * Props for the StackContainer component.
@@ -39,6 +41,21 @@ export function StackContainer({ config }: StackContainerProps) {
   const { data: allNotes = [] } = useNotes();
   const containerRef = useRef<HTMLDivElement>(null);
   const createNoteMutation = useCreateNote();
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const paneWidth = config.layout.pane.width || 600;
+
+  // Track scroll position for collapsing panes
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setScrollLeft(container.scrollLeft);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Scroll to new pane when added
   useEffect(() => {
@@ -51,6 +68,83 @@ export function StackContainer({ config }: StackContainerProps) {
       });
     }
   }, [state.panes.length]);
+
+  // Get container width for calculations
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateWidth = () => setContainerWidth(container.clientWidth);
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Calculate which panes should be collapsed based on scroll position
+  // A pane collapses when it's been scrolled past (its right edge is out of view on the left)
+  const getCollapseState = useCallback(
+    (index: number) => {
+      // First pane never collapses
+      if (index === 0) return false;
+
+      // Only one pane - never collapse
+      if (state.panes.length === 1) return false;
+
+      // Calculate how many full-width panes can fit in the container
+      const panesInView = Math.max(1, Math.floor(containerWidth / paneWidth));
+
+      // Calculate total width of all panes at full size
+      const totalWidth = state.panes.length * paneWidth;
+
+      // Calculate the maximum scroll position
+      const maxScroll = Math.max(0, totalWidth - containerWidth);
+
+      // If we can see all panes, don't collapse any
+      if (maxScroll === 0) return false;
+
+      // Calculate what percentage we've scrolled
+      const scrollPercentage = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+
+      // Calculate which pane index should start being visible based on scroll
+      const firstVisibleIndex = Math.floor(scrollPercentage * (state.panes.length - panesInView));
+
+      // Collapse if this pane is before the first visible one
+      return index < firstVisibleIndex;
+    },
+    [scrollLeft, paneWidth, containerWidth, state.panes.length]
+  );
+
+  // Scroll to a specific pane (used when clicking collapsed pane)
+  const scrollToPane = useCallback(
+    (index: number) => {
+      if (!containerRef.current) return;
+
+      // To show pane at index, we need to scroll so it's the first visible pane
+      // We want firstVisibleIndex = index
+      // From the formula: index = floor(scrollPercentage * (numPanes - panesInView))
+      // So: scrollPercentage = index / (numPanes - panesInView)
+      // And: scrollLeft = scrollPercentage * maxScroll
+
+      const panesInView = Math.max(1, Math.floor(containerWidth / paneWidth));
+      const totalWidth = state.panes.length * paneWidth;
+      const maxScroll = Math.max(0, totalWidth - containerWidth);
+
+      if (maxScroll === 0) return;
+
+      const scrollPercentage = index / Math.max(1, state.panes.length - panesInView);
+      const targetScroll = Math.min(maxScroll, scrollPercentage * maxScroll);
+
+      containerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: "smooth",
+      });
+    },
+    [paneWidth, containerWidth, state.panes.length]
+  );
 
   const handleLinkClick = useCallback(
     (title: string, paneIndex: number) => {
@@ -114,11 +208,13 @@ export function StackContainer({ config }: StackContainerProps) {
           title={pane.title}
           index={index}
           isActive={index === state.activePaneIndex}
+          collapsed={getCollapseState(index)}
           config={config}
           allNotes={allNotes}
           onLinkClick={(title) => handleLinkClick(title, index)}
           onClose={() => handleClose(index)}
           onSetActive={() => setActive(index)}
+          onExpandPane={() => scrollToPane(index)}
           onCreateNote={handleCreateNote}
           onTitleChange={(newTitle) => handleTitleChange(pane.title, newTitle)}
           onDeleteNote={handleDeleteNote}
@@ -138,6 +234,8 @@ interface PaneWrapperProps {
   index: number;
   /** Whether this pane is currently active/focused */
   isActive: boolean;
+  /** Whether this pane should display in collapsed mode */
+  collapsed: boolean;
   /** Application configuration for theming and layout */
   config: NexusConfig;
   /** List of all notes for autocomplete in edit mode */
@@ -148,6 +246,8 @@ interface PaneWrapperProps {
   onClose: () => void;
   /** Callback to set this pane as active */
   onSetActive: () => void;
+  /** Callback when clicking a collapsed pane to expand it */
+  onExpandPane: () => void;
   /** Optional callback when creating a new note from autocomplete */
   onCreateNote?: (title: string) => void;
   /** Optional callback when renaming a note's title */
@@ -168,11 +268,13 @@ function PaneWrapper({
   title,
   index,
   isActive,
+  collapsed,
   config,
   allNotes = [],
   onLinkClick,
   onClose,
   onSetActive,
+  onExpandPane,
   onCreateNote,
   onTitleChange,
   onDeleteNote,
@@ -251,12 +353,13 @@ function PaneWrapper({
   return (
     <div
       className="pane-enter snap-center md:snap-align-none"
-      onClick={onSetActive}
+      onClick={collapsed ? undefined : onSetActive}
     >
       <Pane
         note={note}
         index={index}
         isActive={isActive}
+        collapsed={collapsed}
         config={config}
         allNotes={allNotes}
         onLinkClick={onLinkClick}
@@ -265,6 +368,7 @@ function PaneWrapper({
         onTitleChange={handleTitleChange}
         onCreateNote={onCreateNote}
         onDelete={handleDelete}
+        onExpandPane={onExpandPane}
       />
     </div>
   );
