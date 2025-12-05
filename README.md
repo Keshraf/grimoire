@@ -82,7 +82,7 @@ NEXUS is a single template that gives you:
 This relates to [[Consciousness]] and [[Qualia|the hard problem]].
 ```
 
-- **Forward links**: You create them by typing `[[slug]]`
+- **Forward links**: You create them by typing `[[Title]]`
 - **Backlinks**: Automatically detected — every note knows what links to it
 - **Autocomplete**: Type `[[` and get suggestions from existing notes
 
@@ -438,8 +438,7 @@ NEXUS uses Supabase (PostgreSQL) with this schema:
 -- Notes
 CREATE TABLE notes (
   id UUID PRIMARY KEY,
-  slug TEXT UNIQUE NOT NULL,
-  title TEXT NOT NULL,
+  title TEXT UNIQUE NOT NULL,
   content TEXT NOT NULL,
   tags TEXT[],
   section TEXT,
@@ -450,9 +449,9 @@ CREATE TABLE notes (
 
 -- Links (for fast backlink queries)
 CREATE TABLE links (
-  source_slug TEXT REFERENCES notes(slug),
-  target_slug TEXT,
-  UNIQUE(source_slug, target_slug)
+  source_title TEXT REFERENCES notes(title),
+  target_title TEXT,
+  UNIQUE(source_title, target_title)
 );
 
 -- Full-text search

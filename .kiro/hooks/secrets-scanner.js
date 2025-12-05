@@ -4,44 +4,107 @@ const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-// Folders to ignore
-const IGNORED_FOLDERS = ["node_modules", ".git", "dist", "build"];
-
-// Secret patterns to detect
+// Patterns to detect potential secrets
 const SECRET_PATTERNS = [
   // API keys with common prefixes
-  { name: "API Key (sk-)", pattern: /\bsk-[a-zA-Z0-9]{20,}/g },
-  { name: "API Key (ctx7sk-)", pattern: /\bctx7sk-[a-zA-Z0-9]{20,}/g },
-  { name: "API Key (pk_)", pattern: /\bpk_[a-zA-Z0-9]{20,}/g },
+  { name: "OpenAI API Key", pattern: /sk-[a-zA-Z0-9]{20,}/g },
+  { name: "Context7 API Key", pattern: /ctx7sk-[a-zA-Z0-9]{20,}/g },
+  {
+    name: "Stripe Publishable Key",
+    pattern: /pk_(?:live|test)_[a-zA-Z0-9]{20,}/g,
+  },
+  { name: "Stripe Secret Key", pattern: /sk_(?:live|test)_[a-zA-Z0-9]{20,}/g },
+
   // AWS keys
-  { name: "AWS Access Key", pattern: /\bAKIA[0-9A-Z]{16}\b/g },
+  { name: "AWS Access Key", pattern: /AKIA[0-9A-Z]{16}/g },
+  {
+    name: "AWS Secret Key",
+    pattern:
+      /(?:aws_secret_access_key|AWS_SECRET_ACCESS_KEY)\s*[=:]\s*['"]?([A-Za-z0-9/+=]{40})['"]?/g,
+  },
+
   // Generic secrets in assignments
   {
-    name: "Generic Secret",
-    pattern:
-      /(?:api_key|apikey|secret|password|token)\s*[=:]\s*["']([^"']{8,})["']/gi,
+    name: "Generic API Key",
+    pattern: /(?:api_key|apikey|api-key)\s*[=:]\s*['"]([^'"]{8,})['"]?/gi,
   },
-  // Base64-encoded strings (32+ chars, likely secrets)
-  { name: "Base64 Secret", pattern: /["'][A-Za-z0-9+/]{32,}={0,2}["']/g },
+  {
+    name: "Generic Secret",
+    pattern: /(?:secret|SECRET)\s*[=:]\s*['"]([^'"]{8,})['"]?/g,
+  },
+  {
+    name: "Generic Password",
+    pattern: /(?:password|PASSWORD|passwd)\s*[=:]\s*['"]([^'"]{8,})['"]?/g,
+  },
+  {
+    name: "Generic Token",
+    pattern: /(?:token|TOKEN)\s*[=:]\s*['"]([^'"]{16,})['"]?/g,
+  },
+
+  // Base64-encoded strings (potential secrets)
+  { name: "Base64 Secret", pattern: /['"][A-Za-z0-9+/]{32,}={0,2}['"]/g },
+
+  // Supabase keys
+  {
+    name: "Supabase Key",
+    pattern: /eyJ[a-zA-Z0-9_-]{50,}\.[a-zA-Z0-9_-]{50,}\.[a-zA-Z0-9_-]{50,}/g,
+  },
 ];
+
+// Directories and files to ignore
+const IGNORE_PATTERNS = [
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  ".env",
+  ".env.local",
+  ".env.example",
+  ".env.development",
+  ".env.production",
+];
+
+function shouldIgnoreFile(filePath) {
+  return IGNORE_PATTERNS.some((pattern) => filePath.includes(pattern));
+}
 
 function maskSecret(secret) {
   if (secret.length <= 4) return "****";
   return secret.substring(0, 4) + "...";
 }
 
-function shouldIgnoreFile(filePath) {
-  // Ignore .env files
-  if (path.basename(filePath).startsWith(".env")) {
-    return true;
+function getStagedFiles() {
+  try {
+    const output = execSync("git diff --cached --name-only --diff-filter=ACM", {
+      encoding: "utf-8",
+    });
+    return output.trim().split("\n").filter(Boolean);
+  } catch (error) {
+    console.error("Error getting staged files:", error.message);
+    return [];
   }
-  // Ignore files in ignored folders
-  const parts = filePath.split(path.sep);
-  return parts.some((part) => IGNORED_FOLDERS.includes(part));
 }
 
-function scanFileContent(content, filePath) {
+function scanFileForSecrets(filePath) {
   const findings = [];
+
+  if (shouldIgnoreFile(filePath)) {
+    return findings;
+  }
+
+  const fullPath = path.resolve(process.cwd(), filePath);
+
+  if (!fs.existsSync(fullPath)) {
+    return findings;
+  }
+
+  let content;
+  try {
+    content = fs.readFileSync(fullPath, "utf-8");
+  } catch (error) {
+    return findings;
+  }
+
   const lines = content.split("\n");
 
   lines.forEach((line, index) => {
@@ -50,10 +113,24 @@ function scanFileContent(content, filePath) {
     SECRET_PATTERNS.forEach(({ name, pattern }) => {
       // Reset regex lastIndex for global patterns
       pattern.lastIndex = 0;
-      let match;
 
+      let match;
       while ((match = pattern.exec(line)) !== null) {
         const secret = match[1] || match[0];
+
+        // Skip if it looks like a placeholder or example
+        if (
+          secret.includes("your-") ||
+          secret.includes("YOUR_") ||
+          secret.includes("xxx") ||
+          secret.includes("XXX") ||
+          secret === "your-anon-key" ||
+          secret === "your-service-role-key" ||
+          /^[a-z-]+$/.test(secret) // Skip if all lowercase with dashes (likely placeholder)
+        ) {
+          continue;
+        }
+
         findings.push({
           file: filePath,
           line: lineNumber,
@@ -67,18 +144,9 @@ function scanFileContent(content, filePath) {
   return findings;
 }
 
-function getStagedFiles() {
-  try {
-    const output = execSync("git diff --cached --name-only --diff-filter=ACM", {
-      encoding: "utf-8",
-    });
-    return output.trim().split("\n").filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
 function main() {
+  console.log("🔍 Scanning staged files for potential secrets...\n");
+
   const stagedFiles = getStagedFiles();
 
   if (stagedFiles.length === 0) {
@@ -86,40 +154,30 @@ function main() {
     process.exit(0);
   }
 
-  let allFindings = [];
+  const allFindings = [];
 
-  for (const filePath of stagedFiles) {
-    if (shouldIgnoreFile(filePath)) {
-      continue;
-    }
-
-    const fullPath = path.resolve(process.cwd(), filePath);
-
-    if (!fs.existsSync(fullPath)) {
-      continue;
-    }
-
-    try {
-      const content = fs.readFileSync(fullPath, "utf-8");
-      const findings = scanFileContent(content, filePath);
-      allFindings = allFindings.concat(findings);
-    } catch {
-      // Skip files that can't be read
-    }
-  }
+  stagedFiles.forEach((file) => {
+    const findings = scanFileForSecrets(file);
+    allFindings.push(...findings);
+  });
 
   if (allFindings.length > 0) {
-    console.log("\n🚨 Potential secrets detected in staged files:\n");
+    console.log("⚠️  Potential secrets detected:\n");
+
     allFindings.forEach(({ file, line, type, masked }) => {
-      console.log(`  ${file}:${line} - ${type}: ${masked}`);
+      console.log(`  ${file}:${line}`);
+      console.log(`    Type: ${type}`);
+      console.log(`    Value: ${masked}\n`);
     });
+
+    console.log("❌ Commit blocked. Please remove secrets before committing.");
     console.log(
-      "\n❌ Commit blocked. Please remove secrets before committing.\n"
+      "   If these are false positives, review and update the scanner patterns."
     );
     process.exit(1);
   }
 
-  console.log("✅ No secrets detected in staged files.");
+  console.log(`✅ No secrets found in ${stagedFiles.length} staged file(s).`);
   process.exit(0);
 }
 

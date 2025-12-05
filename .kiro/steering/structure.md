@@ -8,7 +8,7 @@
 │   │   ├── api/           # API routes
 │   │   │   └── notes/     # Notes CRUD endpoints
 │   │   │       ├── route.ts           # GET all, POST create
-│   │   │       └── [slug]/route.ts    # GET/PUT/DELETE by slug
+│   │   │       └── [title]/route.ts   # GET/PUT/DELETE by title
 │   │   ├── layout.tsx     # Root layout with providers
 │   │   └── page.tsx       # Main page
 │   ├── components/        # React components
@@ -40,4 +40,4 @@
 - **API Routes**: Follow Next.js App Router conventions with `route.ts` files
 - **State**: Navigation uses Context + useReducer pattern; data fetching uses React Query
 - **Database**: All note operations go through Supabase client in `src/lib/supabase.ts`
-- **Wikilinks**: `[[slug]]` syntax parsed by `src/lib/links.ts`
+- **Wikilinks**: `[[Title]]` syntax parsed by `src/lib/links.ts`

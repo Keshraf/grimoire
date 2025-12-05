@@ -4,8 +4,7 @@
 -- Notes table
 CREATE TABLE IF NOT EXISTS notes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
-  title TEXT NOT NULL,
+  title TEXT UNIQUE NOT NULL,
   content TEXT NOT NULL DEFAULT '',
   tags TEXT[] DEFAULT '{}',
   section TEXT,
@@ -17,19 +16,19 @@ CREATE TABLE IF NOT EXISTS notes (
 -- Links table for tracking wikilinks between notes
 CREATE TABLE IF NOT EXISTS links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source_slug TEXT NOT NULL REFERENCES notes(slug) ON DELETE CASCADE,
-  target_slug TEXT NOT NULL,
+  source_title TEXT NOT NULL REFERENCES notes(title) ON DELETE CASCADE,
+  target_title TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(source_slug, target_slug)
+  UNIQUE(source_title, target_title)
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_notes_slug ON notes(slug);
+CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title);
 CREATE INDEX IF NOT EXISTS idx_notes_tags ON notes USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_notes_section ON notes(section);
 CREATE INDEX IF NOT EXISTS idx_notes_order ON notes("order");
-CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_slug);
-CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_slug);
+CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_title);
+CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_title);
 
 -- Full-text search
 ALTER TABLE notes ADD COLUMN IF NOT EXISTS fts tsvector
