@@ -32,7 +32,7 @@ function extractWikilinks(content: string): string[] {
   while ((match = regex.exec(content)) !== null) {
     links.push(match[1].trim());
   }
-  return [...new Set(links)]; // Return unique links
+  return Array.from(new Set(links)); // Return unique links
 }
 
 async function seed(exampleName: string): Promise<SeedResult> {

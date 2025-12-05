@@ -163,6 +163,7 @@ export function SearchModal({
             type="text"
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search notes..."
             className="flex-1 bg-transparent text-[var(--color-text,#e8e6e3)] placeholder-[var(--color-text-muted,#a8a6a3)] outline-none text-lg"
             aria-label="Search notes"
